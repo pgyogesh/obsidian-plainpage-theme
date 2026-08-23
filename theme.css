@@ -1,0 +1,2964 @@
+/* ============================================================================
+   NOTION — an Obsidian theme
+   ----------------------------------------------------------------------------
+   Goal: make the ENTIRE Obsidian window read as Notion. Approach:
+     1. Define Notion design tokens once (--nt-*).
+     2. Map Obsidian's built-in CSS variables onto those tokens (does ~70%).
+     3. Only then reach for element selectors for what variables don't cover.
+   Scoped for light (body.theme-light) and dark (body.theme-dark).
+
+   Known CSS limitations (not faked — see notes near the end):
+     - Per-block drag handle + "add block" (+) hover UX
+     - The slash-command menu chrome
+     - Database / board / gallery views
+   These require plugins; pure CSS gets as close as it can.
+   ============================================================================ */
+
+
+/* ============================================================================
+   1. NOTION DESIGN TOKENS
+   ============================================================================ */
+
+/* --- Shared tokens (font stacks, metrics: identical across light/dark) --- */
+:root {
+  /* Type */
+  --nt-font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                  Helvetica, Arial, sans-serif;
+  --nt-font-mono: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Metrics */
+  --nt-radius-hover: 3px;   /* hover items, buttons, small chips */
+  --nt-radius-surface: 5px; /* larger surfaces: callouts, code, cards */
+  --nt-radius-modal: 8px;   /* modals, palette */
+  --nt-line-width: 708px;   /* Notion content column */
+
+  /* Accent (same hue both modes) */
+  --nt-accent: #2383e2;
+  --nt-accent-bg: rgba(35, 131, 226, 0.14);
+
+  /* Inline code text is the warm red in both modes */
+  --nt-code-inline-text: #eb5757;
+}
+
+/* --- LIGHT MODE tokens --- */
+body.theme-light {
+  --nt-bg: #ffffff;
+  --nt-bg-sidebar: #f7f7f5;
+  --nt-bg-elevated: #ffffff;         /* popovers/menus sit on white */
+
+  --nt-text-primary: rgb(55, 53, 47); /* Notion's signature #37352f */
+  --nt-text-secondary: rgba(55, 53, 47, 0.65);
+  --nt-text-tertiary: rgba(55, 53, 47, 0.4);
+
+  --nt-hover: rgba(55, 53, 47, 0.08);
+  --nt-active: rgba(55, 53, 47, 0.16);
+  --nt-border: rgba(55, 53, 47, 0.09);   /* ~#e9e9e7 */
+  --nt-border-strong: rgba(55, 53, 47, 0.16);
+
+  --nt-code-inline-bg: rgba(135, 131, 120, 0.15);
+  --nt-code-block-bg: #f7f6f3;
+
+  --nt-shadow-modal: rgba(15, 15, 15, 0.05) 0px 0px 0px 1px,
+                     rgba(15, 15, 15, 0.1) 0px 3px 6px,
+                     rgba(15, 15, 15, 0.2) 0px 9px 24px;
+  --nt-shadow-pop: rgba(15, 15, 15, 0.05) 0px 0px 0px 1px,
+                   rgba(15, 15, 15, 0.1) 0px 3px 6px,
+                   rgba(15, 15, 15, 0.2) 0px 9px 24px;
+
+  /* Notion callout tints (light) */
+  --nt-callout-gray: rgba(241, 241, 239, 1);
+  --nt-callout-blue: rgba(231, 243, 248, 1);
+  --nt-callout-green: rgba(237, 243, 236, 1);
+  --nt-callout-yellow: rgba(251, 243, 219, 1);
+  --nt-callout-red: rgba(253, 235, 236, 1);
+  --nt-callout-orange: rgba(250, 235, 221, 1);
+  --nt-callout-purple: rgba(244, 240, 247, 0.8);
+}
+
+/* --- DARK MODE tokens --- */
+body.theme-dark {
+  --nt-bg: #191919;
+  --nt-bg-sidebar: #202020;
+  --nt-bg-elevated: #252525;         /* popovers/menus slightly lifted */
+
+  --nt-text-primary: rgba(255, 255, 255, 0.81);
+  --nt-text-secondary: rgba(255, 255, 255, 0.44);
+  --nt-text-tertiary: rgba(255, 255, 255, 0.28);
+
+  --nt-hover: rgba(255, 255, 255, 0.055);
+  --nt-active: rgba(255, 255, 255, 0.08);   /* selected file needs a touch more than 0.03 to read */
+  --nt-border: rgba(255, 255, 255, 0.094);
+  --nt-border-strong: rgba(255, 255, 255, 0.13);
+
+  --nt-code-inline-bg: rgba(135, 131, 120, 0.15);
+  --nt-code-block-bg: rgba(255, 255, 255, 0.03);
+
+  --nt-shadow-modal: rgba(15, 15, 15, 0.2) 0px 0px 0px 1px,
+                     rgba(15, 15, 15, 0.4) 0px 5px 10px,
+                     rgba(15, 15, 15, 0.6) 0px 15px 40px;
+  --nt-shadow-pop: rgba(15, 15, 15, 0.2) 0px 0px 0px 1px,
+                   rgba(15, 15, 15, 0.4) 0px 3px 6px,
+                   rgba(15, 15, 15, 0.6) 0px 9px 24px;
+
+  /* Notion callout tints (dark) */
+  --nt-callout-gray: rgba(255, 255, 255, 0.055);
+  --nt-callout-blue: rgba(35, 131, 226, 0.12);
+  --nt-callout-green: rgba(45, 153, 100, 0.12);
+  --nt-callout-yellow: rgba(203, 145, 47, 0.14);
+  --nt-callout-red: rgba(235, 87, 87, 0.12);
+  --nt-callout-orange: rgba(217, 115, 13, 0.13);
+  --nt-callout-purple: rgba(154, 109, 215, 0.13);
+}
+
+
+/* ============================================================================
+   2. MAP OBSIDIAN VARIABLES ONTO NOTION TOKENS
+   ---------------------------------------------------------------------------
+   Setting these under body.theme-light / body.theme-dark overrides Obsidian's
+   built-in color scheme cleanly, which does most of the work.
+   ============================================================================ */
+
+body.theme-light,
+body.theme-dark {
+  /* Fonts */
+  --font-interface-theme: var(--nt-font-sans);
+  --font-text-theme: var(--nt-font-sans);
+  --font-monospace-theme: var(--nt-font-mono);
+
+  /* Body text metrics */
+  --font-text-size: 16px;
+  --line-height-normal: 1.5;
+  --file-line-width: var(--nt-line-width);
+  --file-margins: 48px 60px 48px 60px;   /* generous horizontal page padding */
+  --p-spacing: 0.5em;
+
+  /* Backgrounds */
+  --background-primary: var(--nt-bg);
+  --background-primary-alt: var(--nt-bg);
+  --background-secondary: var(--nt-bg-sidebar);
+  --background-secondary-alt: var(--nt-bg-sidebar);
+  --background-modifier-hover: var(--nt-hover);
+  --background-modifier-active-hover: var(--nt-active);
+  --background-modifier-border: var(--nt-border);
+  --background-modifier-border-hover: var(--nt-border-strong);
+  --background-modifier-border-focus: var(--nt-accent);
+
+  /* Text */
+  --text-normal: var(--nt-text-primary);
+  --text-muted: var(--nt-text-secondary);
+  --text-faint: var(--nt-text-tertiary);
+  --text-on-accent: #ffffff;
+  --text-selection: var(--nt-accent-bg);
+
+  /* Accent — links & interactive */
+  --text-accent: var(--nt-accent);
+  --text-accent-hover: var(--nt-accent);
+  --interactive-accent: var(--nt-accent);
+  --interactive-accent-hover: color-mix(in srgb, var(--nt-accent), #000 12%);
+  --interactive-normal: var(--nt-hover);
+  --interactive-hover: var(--nt-active);
+
+  /* Radii */
+  --radius-s: var(--nt-radius-hover);
+  --radius-m: var(--nt-radius-surface);
+  --radius-l: var(--nt-radius-modal);
+  --radius-xl: 12px;
+
+  /* Headings — Notion scale. H1 30/700, H2 24/600, H3 20/600 */
+  --h1-size: 30px;  --h1-weight: 700;  --h1-line-height: 1.2;
+  --h2-size: 24px;  --h2-weight: 600;  --h2-line-height: 1.3;
+  --h3-size: 20px;  --h3-weight: 600;  --h3-line-height: 1.3;
+  --h4-size: 17px;  --h4-weight: 600;  --h4-line-height: 1.3;
+  --h5-size: 15px;  --h5-weight: 600;  --h5-line-height: 1.4;
+  --h6-size: 14px;  --h6-weight: 600;  --h6-line-height: 1.4;
+  --h1-color: var(--nt-text-primary);
+  --h2-color: var(--nt-text-primary);
+  --h3-color: var(--nt-text-primary);
+  --h4-color: var(--nt-text-primary);
+  --h5-color: var(--nt-text-primary);
+  --h6-color: var(--nt-text-primary);
+  --heading-spacing: 1.4em;
+
+  /* Inline (note) title — Notion big page title */
+  --inline-title-size: 40px;
+  --inline-title-weight: 700;
+  --inline-title-color: var(--nt-text-primary);
+  --inline-title-line-height: 1.2;
+
+  /* Bold / italic */
+  --bold-weight: 600;
+  --bold-color: var(--nt-text-primary);
+  --italic-color: var(--nt-text-primary);
+
+  /* Links */
+  --link-color: var(--nt-text-primary);
+  --link-color-hover: var(--nt-text-primary);
+  --link-decoration: underline;
+  --link-decoration-color: var(--nt-text-tertiary);
+  --link-decoration-hover: underline;
+  --link-external-color: var(--nt-text-primary);
+  --link-unresolved-color: var(--nt-text-tertiary);
+  --link-unresolved-opacity: 1;
+
+  /* Code */
+  --code-background: var(--nt-code-block-bg);
+  --code-normal: var(--nt-text-primary);
+  --code-size: 0.85em;
+
+  /* Blockquote — Notion uses a bold left rule, no bg */
+  --blockquote-border-thickness: 3px;
+  --blockquote-border-color: var(--nt-text-primary);
+  --blockquote-color: var(--nt-text-primary);
+  --blockquote-background-color: transparent;
+
+  /* Horizontal rule */
+  --hr-color: var(--nt-border);
+  --hr-thickness: 1px;
+
+  /* Tables */
+  --table-border-width: 1px;
+  --table-border-color: var(--nt-border);
+  --table-header-background: var(--nt-bg-sidebar);
+  --table-header-color: var(--nt-text-secondary);
+  --table-background: transparent;
+  --table-header-weight: 500;
+  --table-row-alt-background: transparent;
+  --table-row-background-hover: var(--nt-hover);
+  --table-selection: var(--nt-accent-bg);
+
+  /* Checkboxes */
+  --checkbox-radius: 3px;
+  --checkbox-size: 16px;
+  --checkbox-color: var(--nt-accent);
+  --checkbox-color-hover: var(--nt-accent);
+  --checkbox-border-color: var(--nt-text-tertiary);
+  --checkbox-border-color-hover: var(--nt-text-secondary);
+  --checkbox-marker-color: #ffffff;
+  --checklist-done-color: var(--nt-text-tertiary);
+
+  /* Tags — pill style */
+  --tag-size: 0.82em;
+  --tag-color: var(--nt-accent);
+  --tag-background: var(--nt-accent-bg);
+  --tag-background-hover: var(--nt-accent-bg);
+  --tag-border-width: 0px;
+  --tag-radius: 3px;
+  --tag-weight: 500;
+  --tag-decoration: none;
+
+  /* Tabs */
+  --tab-background-active: var(--nt-bg);
+  --tab-text-color: var(--nt-text-secondary);
+  --tab-text-color-active: var(--nt-text-primary);
+  --tab-text-color-focused-active-current: var(--nt-text-primary);
+  --tab-font-size: 13px;
+  --tab-font-weight: 500;
+  --tab-curve: 0px;
+  --tab-outline-width: 0px;
+
+  /* Titlebar */
+  --titlebar-background: var(--nt-bg-sidebar);
+  --titlebar-background-focused: var(--nt-bg-sidebar);
+  --titlebar-border-width: 0px;
+  --titlebar-text-color: var(--nt-text-secondary);
+  --titlebar-text-color-focused: var(--nt-text-primary);
+  --titlebar-text-weight: 500;
+
+  /* Ribbon — blend into sidebar */
+  --ribbon-background: var(--nt-bg-sidebar);
+  --ribbon-background-collapsed: var(--nt-bg-sidebar);
+
+  /* Nav (file explorer) */
+  --nav-item-size: 14px;
+  --nav-item-color: var(--nt-text-secondary);
+  --nav-item-color-hover: var(--nt-text-primary);
+  --nav-item-color-active: var(--nt-text-primary);
+  --nav-item-color-selected: var(--nt-text-primary);
+  --nav-item-background-hover: var(--nt-hover);
+  --nav-item-background-active: var(--nt-active);
+  --nav-item-background-selected: var(--nt-active);
+  --nav-item-weight: 400;
+  --nav-item-weight-hover: 400;
+  --nav-item-weight-active: 500;
+  --nav-item-padding: 4px 8px 4px 12px;
+  --nav-indentation-guide-color: var(--nt-border);
+
+  /* Status bar */
+  --status-bar-background: var(--nt-bg-sidebar);
+  --status-bar-border-color: var(--nt-border);
+  --status-bar-border-width: 0px;
+  --status-bar-text-color: var(--nt-text-tertiary);
+  --status-bar-font-size: 12px;
+
+  /* Scrollbars — thin, faint */
+  --scrollbar-thumb-bg: var(--nt-active);
+  --scrollbar-bg: transparent;
+  --scrollbar-active-thumb-bg: var(--nt-text-tertiary);
+
+  /* Modals & prompt (command palette) */
+  --modal-background: var(--nt-bg-elevated);
+  --modal-border-width: 1px;
+  --modal-border-color: var(--nt-border);
+  --modal-radius: var(--nt-radius-modal);
+  --prompt-border-width: 0px;
+  --prompt-border-color: var(--nt-border);
+
+  /* Metadata / properties */
+  --metadata-label-text-color: var(--nt-text-secondary);
+  --metadata-input-text-color: var(--nt-text-primary);
+  --metadata-label-font-size: 14px;
+  --metadata-input-font-size: 14px;
+  --metadata-background: transparent;
+  --metadata-divider-color: transparent;
+  --metadata-property-padding: 2px 0;
+  --metadata-label-background-hover: var(--nt-hover);
+
+  /* Callouts default radius/border */
+  --callout-padding: 12px 16px;
+  --callout-radius: var(--nt-radius-surface);
+  --callout-border-width: 0px;
+  --callout-blend-mode: normal;
+
+  /* Buttons / inputs */
+  --input-radius: var(--nt-radius-hover);
+  --button-radius: var(--nt-radius-hover);
+  --toggle-radius: 44px;
+
+  /* Dividers between UI panes */
+  --divider-color: var(--nt-border);
+  --divider-width: 1px;
+}
+
+
+/* ============================================================================
+   3. ELEMENT-LEVEL OVERRIDES (things variables don't fully cover), BY REGION
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   REGION 0 — GLOBAL POLISH (font smoothing, selection, micro-transitions)
+   --------------------------------------------------------------------------- */
+/* macOS antialiasing — the single biggest "this is Notion" tell */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Notion-blue text selection everywhere (variables don't reach every surface) */
+::selection { background-color: rgba(35, 131, 226, 0.20); }
+body.theme-dark ::selection { background-color: rgba(35, 131, 226, 0.28); }
+
+/* Subtle Notion-speed ease on interactive surfaces */
+.nav-file-title,
+.nav-folder-title,
+.tree-item-self,
+.workspace-tab-header-inner,
+.suggestion-item,
+.menu-item,
+.vertical-tab-nav-item,
+.clickable-icon,
+button,
+.checkbox-container,
+.checkbox-container::after,
+.metadata-property-key,
+.metadata-property-value {
+  transition: background-color 60ms ease-in, color 60ms ease-in,
+              border-color 60ms ease-in, transform 120ms ease;
+}
+
+/* ---------------------------------------------------------------------------
+   REGION 2 — RIBBON
+   Notion has no ribbon. Flatten it into the sidebar with subtle gray icons and
+   no hard borders.
+   --------------------------------------------------------------------------- */
+.workspace-ribbon.side-dock-ribbon,
+.workspace-ribbon {
+  background-color: var(--nt-bg-sidebar);
+  border: none !important;
+  box-shadow: none !important;
+}
+.side-dock-ribbon .side-dock-ribbon-action,
+.workspace-ribbon .clickable-icon {
+  color: var(--nt-text-tertiary);
+  border-radius: var(--nt-radius-hover);
+}
+.side-dock-ribbon .side-dock-ribbon-action:hover,
+.workspace-ribbon .clickable-icon:hover {
+  color: var(--nt-text-primary);
+  background-color: var(--nt-hover);
+}
+
+/* ---------------------------------------------------------------------------
+   REGION 3 — LEFT SIDEBAR / FILE EXPLORER
+   14px gray text, tight rounded hover, subtle active file, quiet chevrons.
+   --------------------------------------------------------------------------- */
+.workspace-split.mod-left-split,
+.workspace-split.mod-left-split .workspace-tabs {
+  background-color: var(--nt-bg-sidebar);
+}
+
+.nav-files-container,
+.nav-folder-title,
+.nav-file-title {
+  font-size: 14px;
+}
+
+/* Rounded, tight hover targets */
+.tree-item-self.nav-file-title,
+.tree-item-self.nav-folder-title {
+  border-radius: var(--nt-radius-hover);
+  margin: 0 6px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  line-height: 1.4;
+  color: var(--nt-text-secondary);
+}
+.tree-item-self.nav-file-title:hover,
+.tree-item-self.nav-folder-title:hover {
+  background-color: var(--nt-hover);
+  color: var(--nt-text-primary);
+}
+/* Active/selected file: slightly darker fill, weightier text */
+.tree-item-self.is-active,
+.nav-file-title.is-active {
+  background-color: var(--nt-active) !important;
+  color: var(--nt-text-primary) !important;
+  font-weight: 500;
+}
+
+/* Collapse chevrons — faint, Notion-like */
+.nav-folder-collapse-indicator,
+.tree-item-icon.collapse-icon {
+  color: var(--nt-text-tertiary);
+}
+.tree-item-self:hover .collapse-icon {
+  color: var(--nt-text-secondary);
+}
+
+/* Sidebar section headers ("Files", search headings) */
+.nav-header,
+.workspace-leaf-content[data-type="search"] .nav-header {
+  padding: 2px 8px;
+}
+
+/* ---------------------------------------------------------------------------
+   REGION 4 — WORKSPACE TABS
+   Minimal, borderless; active tab gets a soft rounded fill.
+   --------------------------------------------------------------------------- */
+.workspace-tab-header-container {
+  background-color: var(--nt-bg-sidebar);
+  border-bottom: 1px solid var(--nt-border) !important;
+  box-shadow: none;
+}
+.workspace-tab-header {
+  border: none !important;
+  background: transparent !important;
+}
+.workspace-tab-header-inner {
+  border-radius: var(--nt-radius-hover);
+  margin: 4px 2px;
+  padding: 3px 8px;
+}
+.workspace-tab-header:hover .workspace-tab-header-inner {
+  background-color: var(--nt-hover);
+}
+.workspace-tab-header.is-active .workspace-tab-header-inner {
+  background-color: var(--nt-active);
+}
+.workspace-tab-header.is-active {
+  box-shadow: none !important;
+}
+.workspace-tab-header-inner-icon {
+  color: var(--nt-text-tertiary);
+}
+/* The tab strip and its "new tab" area blend into the frame */
+.workspace-tabs .workspace-tab-header-container-inner {
+  gap: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   REGION 5 — TITLE BAR / WINDOW FRAME
+   Flat, matches the sidebar/frame background, no border.
+   --------------------------------------------------------------------------- */
+.titlebar {
+  background-color: var(--nt-bg-sidebar);
+  border-bottom: none !important;
+}
+.titlebar-inner {
+  color: var(--nt-text-secondary);
+}
+
+/* ---------------------------------------------------------------------------
+   REGION 6 — VIEW HEADER + INLINE TITLE
+   Flat header that melts into the page; big Notion page title.
+   --------------------------------------------------------------------------- */
+.view-header {
+  background-color: var(--nt-bg);
+  border-bottom: none !important;
+  box-shadow: none;
+  height: 40px;
+}
+.view-header-title {
+  font-size: 14px;
+  color: var(--nt-text-secondary);
+  font-weight: 500;
+}
+.view-header-icon,
+.view-actions .clickable-icon {
+  color: var(--nt-text-tertiary);
+  border-radius: var(--nt-radius-hover);
+}
+.view-actions .clickable-icon:hover {
+  color: var(--nt-text-primary);
+  background-color: var(--nt-hover);
+}
+
+/* Inline title — Notion's oversized page title */
+.inline-title {
+  font-size: var(--inline-title-size);
+  font-weight: var(--inline-title-weight);
+  line-height: var(--inline-title-line-height);
+  color: var(--inline-title-color);
+  margin-bottom: 0.3em;
+  padding-top: 0.2em;
+  letter-spacing: -0.01em;
+}
+
+/* ---------------------------------------------------------------------------
+   REGION 7 — EDITOR (source + preview)
+   Paragraphs, headings, lists, checkboxes, blockquotes, code, callouts,
+   tables, dividers, links, tags.
+   --------------------------------------------------------------------------- */
+.markdown-source-view,
+.markdown-preview-view,
+.markdown-reading-view,
+.cm-editor {
+  background-color: var(--nt-bg);
+  color: var(--nt-text-primary);
+}
+
+/* Headings — extra top margin, tight tracking (H1 gets Notion's big gap) */
+.markdown-preview-view h1,
+.markdown-source-view.mod-cm6 .HyperMD-header-1,
+.cm-header-1 {
+  letter-spacing: -0.01em;
+  margin-top: 2em;
+}
+.markdown-preview-view h2,
+.cm-header-2 { letter-spacing: -0.008em; }
+
+/* Paragraph rhythm */
+.markdown-preview-view p { margin: 2px 0; }
+
+/* Lists — Notion's tight, comfy indentation */
+.markdown-preview-view ul,
+.markdown-preview-view ol { padding-inline-start: 1.6em; }
+.markdown-preview-view li { margin: 1px 0; }
+
+/* Links — subtle underline that darkens on hover */
+.markdown-rendered a,
+.cm-link, .cm-url,
+a.internal-link {
+  text-decoration: underline;
+  text-decoration-color: var(--nt-text-tertiary);
+  text-underline-offset: 2px;
+  color: var(--nt-text-primary);
+}
+.markdown-rendered a:hover,
+a.internal-link:hover {
+  text-decoration-color: var(--nt-text-secondary);
+  color: var(--nt-text-primary);
+}
+
+/* Inline code — Notion's warm red on gray */
+.markdown-rendered code:not(pre code),
+.cm-inline-code,
+code {
+  color: var(--nt-code-inline-text);
+  background-color: var(--nt-code-inline-bg);
+  border-radius: var(--nt-radius-hover);
+  padding: 0.1em 0.35em;
+  font-size: 0.85em;
+}
+
+/* Code blocks — flat gray surface, rounded */
+.markdown-rendered pre,
+.HyperMD-codeblock-bg,
+.cm-editor .cm-line.HyperMD-codeblock {
+  background-color: var(--nt-code-block-bg);
+}
+.markdown-rendered pre {
+  border-radius: var(--nt-radius-surface);
+  padding: 16px;
+  border: none;
+}
+.markdown-rendered pre code {
+  color: var(--nt-text-primary);
+  background: transparent;
+  padding: 0;
+  font-size: 0.85em;
+}
+/* Round the editor code block edges (source mode) */
+.HyperMD-codeblock-begin { border-radius: var(--nt-radius-surface) var(--nt-radius-surface) 0 0; }
+.HyperMD-codeblock-end { border-radius: 0 0 var(--nt-radius-surface) var(--nt-radius-surface); }
+
+/* Blockquote — bold left rule, no background */
+/* Reading view — Notion's bold left rule, no background, upright (not italic) */
+.markdown-rendered blockquote {
+  border-left: 3px solid var(--nt-text-primary);
+  padding: 2px 0 2px 14px;
+  margin: 0.5em 0;
+  margin-left: 0;
+  color: var(--nt-text-primary);
+  background: transparent;
+  font-style: normal;
+  quotes: none;
+}
+.markdown-rendered blockquote > :first-child { margin-top: 0; }
+.markdown-rendered blockquote > :last-child { margin-bottom: 0; }
+
+/* Live Preview (edit mode) — same bold bar drawn with box-shadow so it never
+   shifts layout; coincides with Obsidian's variable-driven bar if present. */
+.markdown-source-view.mod-cm6 .HyperMD-quote {
+  color: var(--nt-text-primary);
+  font-style: normal;
+  box-shadow: inset 3px 0 0 0 var(--nt-text-primary);
+}
+.markdown-source-view.mod-cm6 .cm-quote { color: var(--nt-text-primary); }
+
+/* Horizontal rule / divider — thin faint line */
+.markdown-rendered hr {
+  border: none;
+  border-top: 1px solid var(--nt-border);
+  margin: 1.2em 0;
+}
+
+/* Checkboxes — rounded square, blue when checked, white marker */
+.markdown-source-view input[type="checkbox"],
+.markdown-rendered input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--nt-text-tertiary);
+  border-radius: 3px;
+  position: relative;
+  top: 0;
+  cursor: pointer;
+  transition: background-color 80ms ease-in, border-color 80ms ease-in;
+}
+.markdown-source-view input[type="checkbox"]:hover,
+.markdown-rendered input[type="checkbox"]:hover {
+  border-color: var(--nt-text-secondary);
+}
+.markdown-source-view input[type="checkbox"]:checked,
+.markdown-rendered input[type="checkbox"]:checked {
+  background-color: var(--nt-accent);
+  border-color: var(--nt-accent);
+}
+.markdown-source-view input[type="checkbox"]:checked::after,
+.markdown-rendered input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 4.5px;
+  top: 1.5px;
+  width: 4px;
+  height: 8px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+/* Completed task text goes tertiary */
+.markdown-rendered li.task-list-item.is-checked,
+.markdown-source-view .task-list-item.is-checked {
+  color: var(--nt-text-tertiary);
+  text-decoration: line-through;
+  text-decoration-color: var(--nt-text-tertiary);
+}
+
+/* Tags — Notion pill */
+.tag,
+a.tag {
+  background-color: var(--nt-accent-bg);
+  color: var(--nt-accent);
+  border: none;
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 0.82em;
+  font-weight: 500;
+  text-decoration: none;
+}
+.tag:hover { color: var(--nt-accent); background-color: var(--nt-accent-bg); }
+
+/* Tables — thin borders, header fill, row hover */
+.markdown-rendered table {
+  border-collapse: collapse;
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-radius-hover);
+  font-size: 0.92em;
+}
+.markdown-rendered th,
+.markdown-rendered td {
+  border: 1px solid var(--nt-border);
+  padding: 6px 10px;
+}
+.markdown-rendered th {
+  background-color: var(--nt-bg-sidebar);
+  color: var(--nt-text-secondary);
+  font-weight: 500;
+  text-align: left;
+}
+.markdown-rendered tr:hover td {
+  background-color: var(--nt-hover);
+}
+
+/* --- CALLOUTS → Notion colored callout blocks (rounded bg + padding) --- */
+.markdown-rendered .callout {
+  border-radius: var(--nt-radius-surface);
+  border: none;
+  padding: 12px 16px;
+  mix-blend-mode: normal;
+  background-color: var(--nt-callout-gray);
+  --callout-color-computed: var(--nt-text-primary);
+}
+.markdown-rendered .callout .callout-title {
+  padding: 0;
+  color: var(--nt-text-primary);
+  font-weight: 600;
+}
+.markdown-rendered .callout .callout-content { color: var(--nt-text-primary); }
+.markdown-rendered .callout .callout-icon .svg-icon { color: var(--nt-text-secondary); }
+
+/* Map Obsidian callout types onto Notion's tinted blocks */
+.callout[data-callout="note"],
+.callout[data-callout="abstract"],
+.callout[data-callout="summary"],
+.callout[data-callout="tldr"],
+.callout[data-callout="quote"],
+.callout[data-callout="cite"] { background-color: var(--nt-callout-blue); }
+
+.callout[data-callout="info"],
+.callout[data-callout="todo"] { background-color: var(--nt-callout-blue); }
+
+.callout[data-callout="tip"],
+.callout[data-callout="hint"],
+.callout[data-callout="important"],
+.callout[data-callout="success"],
+.callout[data-callout="check"],
+.callout[data-callout="done"] { background-color: var(--nt-callout-green); }
+
+.callout[data-callout="question"],
+.callout[data-callout="help"],
+.callout[data-callout="faq"],
+.callout[data-callout="warning"],
+.callout[data-callout="caution"],
+.callout[data-callout="attention"] { background-color: var(--nt-callout-yellow); }
+
+.callout[data-callout="failure"],
+.callout[data-callout="fail"],
+.callout[data-callout="missing"],
+.callout[data-callout="danger"],
+.callout[data-callout="error"],
+.callout[data-callout="bug"] { background-color: var(--nt-callout-red); }
+
+.callout[data-callout="example"] { background-color: var(--nt-callout-purple); }
+
+/* ---------------------------------------------------------------------------
+   REGION 8 — RIGHT SIDEBAR PANELS
+   Backlinks, outline, tag pane, and the properties/metadata panel.
+   --------------------------------------------------------------------------- */
+.workspace-split.mod-right-split,
+.workspace-split.mod-right-split .workspace-tabs {
+  background-color: var(--nt-bg-sidebar);
+}
+.workspace-split.mod-right-split .view-content {
+  background-color: var(--nt-bg-sidebar);
+}
+/* Outline / backlink / tag rows get the same rounded hover feel */
+.outline .tree-item-self,
+.backlink-pane .tree-item-self,
+.tag-container .tree-item-self {
+  border-radius: var(--nt-radius-hover);
+  color: var(--nt-text-secondary);
+}
+.outline .tree-item-self:hover,
+.backlink-pane .tree-item-self:hover,
+.tag-container .tree-item-self:hover {
+  background-color: var(--nt-hover);
+  color: var(--nt-text-primary);
+}
+
+/* --- Properties / metadata → Notion page-properties key/value rows --- */
+.metadata-container {
+  border: none;
+  border-top: 1px solid var(--nt-border);
+  border-bottom: 1px solid var(--nt-border);
+  border-radius: 0;
+  padding: 8px 0;
+  margin-bottom: 1em;
+  background: transparent;
+}
+.metadata-properties-heading { display: none; }  /* Notion has no "Properties" header row */
+.metadata-property {
+  padding: 2px 0;
+  border-radius: var(--nt-radius-hover);
+}
+.metadata-property-key {
+  color: var(--nt-text-secondary);
+  font-size: 14px;
+  min-width: 160px;
+}
+.metadata-property-key:hover { background-color: var(--nt-hover); }
+.metadata-property-icon { color: var(--nt-text-tertiary); }
+.metadata-property-value,
+.metadata-input-longtext,
+.metadata-property-value input {
+  color: var(--nt-text-primary);
+  font-size: 14px;
+}
+.metadata-property-value:hover { background-color: var(--nt-hover); border-radius: var(--nt-radius-hover); }
+
+/* ---------------------------------------------------------------------------
+   REGION 9 — COMMAND PALETTE / QUICK FIND
+   Rounded, soft shadow, hover highlight.
+   --------------------------------------------------------------------------- */
+.prompt {
+  background-color: var(--nt-bg-elevated);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-radius-modal);
+  box-shadow: var(--nt-shadow-modal);
+  padding: 6px;
+}
+.prompt-input {
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid var(--nt-border);
+  border-radius: 0;
+  color: var(--nt-text-primary);
+  font-size: 15px;
+  padding: 8px 10px;
+}
+.prompt-input:focus { box-shadow: none; }
+.suggestion-item {
+  border-radius: var(--nt-radius-hover);
+  padding: 6px 10px;
+  color: var(--nt-text-primary);
+}
+.suggestion-item.is-selected {
+  background-color: var(--nt-hover);
+}
+.suggestion-item .suggestion-hotkey {
+  color: var(--nt-text-tertiary);
+  background: transparent;
+}
+.suggestion-note,
+.suggestion-aux { color: var(--nt-text-tertiary); }
+
+/* Menus / popovers share the same elevated chrome */
+.menu {
+  background-color: var(--nt-bg-elevated);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-radius-modal);
+  box-shadow: var(--nt-shadow-pop);
+  padding: 4px;
+}
+.menu-item {
+  border-radius: var(--nt-radius-hover);
+  color: var(--nt-text-primary);
+  padding: 4px 10px;
+}
+.menu-item:hover,
+.menu-item.selected { background-color: var(--nt-hover) !important; }
+.menu-item-icon { color: var(--nt-text-secondary); }
+.menu-separator { border-color: var(--nt-border); }
+
+/* Page-preview & other hover popovers share the elevated card chrome */
+.popover.hover-popover,
+.popover {
+  background-color: var(--nt-bg-elevated);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-radius-modal);
+  box-shadow: var(--nt-shadow-pop);
+}
+.popover.hover-popover .markdown-preview-view { background-color: var(--nt-bg-elevated); }
+
+/* ---------------------------------------------------------------------------
+   REGION 10 — SETTINGS MODAL
+   Clean section list, rows with description + control, pill toggles (blue on).
+   --------------------------------------------------------------------------- */
+.modal {
+  background-color: var(--nt-bg-elevated);
+  border-radius: var(--nt-radius-modal);
+  box-shadow: var(--nt-shadow-modal);
+}
+.modal-bg { background-color: rgba(15, 15, 15, 0.4); }
+.modal-title { color: var(--nt-text-primary); font-weight: 600; }
+
+/* Settings side tab list */
+.vertical-tab-header {
+  background-color: var(--nt-bg-sidebar);
+  border-right: 1px solid var(--nt-border);
+}
+.vertical-tab-header-group-title {
+  color: var(--nt-text-tertiary);
+  font-size: 12px;
+  text-transform: none;
+}
+.vertical-tab-nav-item {
+  border-radius: var(--nt-radius-hover);
+  margin: 1px 6px;
+  color: var(--nt-text-secondary);
+  font-size: 14px;
+}
+.vertical-tab-nav-item:hover { background-color: var(--nt-hover); color: var(--nt-text-primary); }
+.vertical-tab-nav-item.is-active {
+  background-color: var(--nt-active);
+  color: var(--nt-text-primary);
+}
+.vertical-tab-content { background-color: var(--nt-bg); }
+
+/* Setting rows */
+.setting-item {
+  border-top: 1px solid var(--nt-border);
+  padding: 14px 0;
+}
+.setting-item-name { color: var(--nt-text-primary); font-size: 14px; }
+.setting-item-description { color: var(--nt-text-secondary); font-size: 13px; }
+
+/* Notion pill toggle — gray off, blue on */
+.checkbox-container {
+  background-color: var(--nt-border-strong);
+  border-radius: 44px;
+  height: 16px;
+  width: 28px;
+}
+.checkbox-container::after {
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.2);
+}
+.checkbox-container.is-enabled { background-color: var(--nt-accent); }
+
+/* ---------------------------------------------------------------------------
+   REGION 11 — STATUS BAR
+   Minimal, subtle, blends into the frame.
+   --------------------------------------------------------------------------- */
+.status-bar {
+  background-color: var(--nt-bg-sidebar);
+  border-top: 1px solid var(--nt-border);
+  color: var(--nt-text-tertiary);
+  font-size: 12px;
+}
+.status-bar .status-bar-item { color: var(--nt-text-tertiary); }
+.status-bar .clickable-icon:hover { color: var(--nt-text-secondary); }
+
+/* ---------------------------------------------------------------------------
+   REGION 12 — SCROLLBARS, BUTTONS, INPUTS, DROPDOWNS
+   --------------------------------------------------------------------------- */
+/* Thin, faint scrollbars */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background-color: var(--nt-active);
+  border-radius: 8px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--nt-text-tertiary); }
+
+/* Buttons — subtle gray, Notion component feel */
+button:not(.mod-cta):not(.clickable-icon),
+.setting-item button {
+  background-color: var(--nt-hover);
+  color: var(--nt-text-primary);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-radius-hover);
+  box-shadow: none;
+  font-weight: 500;
+}
+button:not(.mod-cta):not(.clickable-icon):hover {
+  background-color: var(--nt-active);
+}
+button.mod-cta,
+.mod-cta {
+  background-color: var(--nt-accent);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--nt-radius-hover);
+  font-weight: 500;
+}
+button.mod-cta:hover { background-color: var(--interactive-accent-hover); }
+
+/* Text inputs & dropdowns */
+input[type="text"],
+input[type="search"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+.dropdown {
+  background-color: var(--nt-bg);
+  border: 1px solid var(--nt-border);
+  border-radius: var(--nt-radius-hover);
+  color: var(--nt-text-primary);
+  box-shadow: none;
+}
+input[type="text"]:focus,
+input[type="search"]:focus,
+textarea:focus,
+.dropdown:focus {
+  border-color: var(--nt-accent);
+  box-shadow: 0 0 0 1px var(--nt-accent);
+}
+
+/* Search input in the file explorer / search pane */
+.search-input-container input {
+  background-color: var(--nt-bg-sidebar);
+  border: 1px solid var(--nt-border);
+}
+
+/* Generic clickable icons across the UI */
+.clickable-icon { color: var(--nt-text-tertiary); }
+.clickable-icon:hover {
+  color: var(--nt-text-primary);
+  background-color: var(--nt-hover);
+}
+
+
+/* ---------------------------------------------------------------------------
+   REGION 13 — EDITOR POLISH (highlight, empty-line hint)
+   --------------------------------------------------------------------------- */
+/* ==highlight== → Notion's yellow highlight block */
+.markdown-rendered mark,
+.cm-highlight {
+  background-color: rgba(251, 243, 219, 1);
+  color: var(--nt-text-primary);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+body.theme-dark .markdown-rendered mark,
+body.theme-dark .cm-highlight {
+  background-color: rgba(203, 145, 47, 0.28);
+}
+/* Note: Obsidian's alt-checkbox states ([/], [-], [>] …) render through the
+   base :checked checkbox rule in REGION 7, so they collapse to Notion's single
+   done/not-done look automatically — no extra rule needed. */
+
+/* "Type '/' for commands…" hint on the empty, focused line (Live Preview).
+   Only shows on a genuinely empty active line, so it never covers content.
+   If your CodeMirror build injects <br> into empty lines and the hint misfires,
+   delete this one block — nothing else depends on it. */
+.markdown-source-view.mod-cm6 .cm-content > .cm-line.cm-active:empty {
+  position: relative;
+}
+.markdown-source-view.mod-cm6 .cm-content > .cm-line.cm-active:empty::before {
+  content: "Type '/' for commands…";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--nt-text-tertiary);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------------
+   REGION 14 — FOCUS MODE (only the note, no chrome — not even the bars)
+   Activates when Obsidian goes fullscreen (body.is-fullscreen, added natively —
+   zero plugins), OR when a body.plainpage-focus class is present (bind a hotkey to
+   toggle it via a plugin if you want focus without fullscreen). This is the
+   same body-class mechanism the Minimal / Hider setups use.
+   --------------------------------------------------------------------------- */
+
+/* Hide everything that isn't the note: ribbon, both sidebars + their resize
+   handles, status bar, window titlebar, and the per-view header. */
+body:is(.is-fullscreen, .plainpage-focus) .workspace-ribbon,
+body:is(.is-fullscreen, .plainpage-focus) .workspace-split.mod-left-split,
+body:is(.is-fullscreen, .plainpage-focus) .workspace-split.mod-right-split,
+body:is(.is-fullscreen, .plainpage-focus) .workspace-leaf-resize-handle,
+body:is(.is-fullscreen, .plainpage-focus) .status-bar,
+body:is(.is-fullscreen, .plainpage-focus) .titlebar,
+body:is(.is-fullscreen, .plainpage-focus) .view-header {
+  display: none !important;
+}
+
+/* The top tab strip collapses to an invisible 6px sliver. Nudge the cursor to
+   the very top edge to reveal it (switch/close notes, or exit) — so focus mode
+   is never a trap. Remove this pair of rules if you want the tabs gone for good. */
+body:is(.is-fullscreen, .plainpage-focus) .workspace-tab-header-container {
+  max-height: 10px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 150ms ease, opacity 150ms ease;
+  /* Same macOS drag-region fix as the auto-hide sliver. */
+  -webkit-app-region: no-drag !important;
+  pointer-events: auto !important;
+}
+body:is(.is-fullscreen, .plainpage-focus) .workspace-tab-header-container * {
+  -webkit-app-region: no-drag !important;
+}
+body:is(.is-fullscreen, .plainpage-focus) .workspace-tab-header-container:hover {
+  max-height: 200px !important;
+  opacity: 1;
+}
+
+/* Breathing room at the top now the header is gone; keep the Notion column
+   centered at --file-line-width. */
+body:is(.is-fullscreen, .plainpage-focus) .markdown-preview-sizer,
+body:is(.is-fullscreen, .plainpage-focus) .markdown-source-view .cm-sizer {
+  padding-top: 40px !important;
+}
+
+/* ---------------------------------------------------------------------------
+   REGION 15 — OPTIONAL MODES (driven by the "Plainpage Settings" companion plugin)
+   Each rule reacts to a body class the plugin toggles. All opt-in — none affect
+   the base theme unless its toggle is on. (Focus mode itself lives in REGION 14.)
+   --------------------------------------------------------------------------- */
+
+/* --- Borderless UI: strip chrome borders/dividers for a seamless surface --- */
+body.plainpage-borderless {
+  --divider-width: 0px;
+  --titlebar-border-width: 0px;
+  --status-bar-border-width: 0px;
+}
+body.plainpage-borderless .workspace-tab-header-container,
+body.plainpage-borderless .status-bar,
+body.plainpage-borderless .view-header,
+body.plainpage-borderless .titlebar,
+body.plainpage-borderless .workspace-split,
+body.plainpage-borderless .workspace-tabs {
+  border: none !important;
+  box-shadow: none !important;
+}
+body.plainpage-borderless .workspace-leaf-resize-handle { background-color: transparent !important; }
+body.plainpage-borderless .metadata-container { border: none !important; }
+
+/* --- Hide ribbon: drop the vertical ribbon entirely (Notion has none). The
+       left sidebar's own icon row (Files / Search / Bookmarks) becomes the nav. --- */
+body.plainpage-hide-ribbon .workspace-ribbon.side-dock-ribbon { display: none !important; }
+/* Preserve macOS traffic-light clearance now the ribbon no longer reserves it,
+   so the first sidebar icon can't slide under the red/yellow/green buttons.
+   Covers both frameless flavours. Tweak the 76px if icons sit too close to /
+   far from the buttons. */
+body.plainpage-hide-ribbon.mod-macos:is(.is-frameless, .is-hidden-frameless)
+  .workspace-split.mod-left-split .workspace-tab-header-container {
+  padding-left: 110px !important;
+}
+
+/* --- Hide sidebar tab icons: fade the left sidebar's Files/Search/Bookmarks
+       icon row to transparent; hover to bring it back. Panes stay enabled and
+       clickable. Delete the :hover rule if you want it gone permanently. --- */
+body.plainpage-hide-sidebar-icons .workspace-split.mod-left-split .workspace-tab-header-container {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+body.plainpage-hide-sidebar-icons .workspace-split.mod-left-split .workspace-tab-header-container:hover {
+  opacity: 1;
+}
+
+/* --- Full-width pages: Notion's full-width toggle (no centered column) --- */
+body.plainpage-full-width { --file-line-width: 100%; }
+body.plainpage-full-width .markdown-preview-sizer,
+body.plainpage-full-width .markdown-source-view .cm-sizer,
+body.plainpage-full-width .cm-contentContainer {
+  max-width: none !important;
+  width: 100% !important;
+}
+
+/* --- Auto-hide tab bar: collapse the editor tab strip to a hover-reveal
+       sliver (scoped to the main editor area, so sidebar tabs are untouched) --- */
+body.plainpage-autohide-tabs .workspace-split.mod-root .workspace-tab-header-container {
+  max-height: 10px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 150ms ease, opacity 150ms ease;
+  /* On macOS the collapsed strip sits in the window drag-region, which eats the
+     mouse so :hover never fires. Force it to accept pointer events. */
+  -webkit-app-region: no-drag !important;
+  pointer-events: auto !important;
+}
+/* The empty area of the bar (inner container / spacer) is its own drag-region,
+   so hovering anywhere but a tab wouldn't trigger the reveal — clear it too. */
+body.plainpage-autohide-tabs .workspace-split.mod-root .workspace-tab-header-container * {
+  -webkit-app-region: no-drag !important;
+}
+body.plainpage-autohide-tabs .workspace-split.mod-root .workspace-tab-header-container:hover {
+  max-height: 200px !important;
+  opacity: 1;
+}
+
+/* --- Compact density: smaller type, tighter spacing --- */
+body.plainpage-compact {
+  --font-text-size: 15px;
+  --line-height-normal: 1.4;
+  --nav-item-size: 13px;
+  --file-margins: 32px 44px;
+  --inline-title-size: 32px;
+  --h1-size: 26px;
+  --h2-size: 21px;
+  --h3-size: 18px;
+  --heading-spacing: 1em;
+}
+
+/* --- Floating panes (experimental "craze"): rounded card panels with gaps --- */
+body.plainpage-floating .workspace {
+  background-color: var(--nt-bg-sidebar);
+  padding: 6px;
+  gap: 6px;
+}
+body.plainpage-floating .workspace-split.mod-root > .workspace-leaf,
+body.plainpage-floating .workspace-split.mod-root .workspace-tabs,
+body.plainpage-floating .workspace-split.mod-left-split,
+body.plainpage-floating .workspace-split.mod-right-split {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--nt-shadow-pop);
+}
+
+/* --- Dim inactive panes: fade splits that aren't focused --- */
+body.plainpage-dim-inactive .workspace-leaf:not(.mod-active) .view-content,
+body.plainpage-dim-inactive .workspace-leaf:not(.mod-active) .view-header {
+  opacity: 0.45;
+  transition: opacity 200ms ease;
+}
+
+/* --- Floating status bar: detach into a rounded pill, bottom-right corner,
+       fully hidden until you hover that corner. Frees the bottom strip. --- */
+body.plainpage-floating-statusbar .status-bar {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  height: auto;
+  width: auto;
+  padding: 3px 10px;
+  border: 1px solid var(--nt-border) !important;
+  border-radius: var(--nt-radius-surface);
+  background-color: var(--nt-bg-elevated);
+  box-shadow: var(--nt-shadow-pop);
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+body.plainpage-floating-statusbar .status-bar:hover { opacity: 1; }
+
+/* --- Grid properties: lay frontmatter/properties out in two columns --- */
+body.plainpage-properties-grid .metadata-properties {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 24px;
+  row-gap: 2px;
+  align-items: start;
+}
+body.plainpage-properties-grid .metadata-property-key { min-width: 110px; }
+/* The "add property" button spans the full row so it stays out of the grid flow */
+body.plainpage-properties-grid .metadata-add-button { grid-column: 1 / -1; }
+
+/* --- Highlight active line: faint rounded background on the cursor's line,
+       plus a Notion ⠿ handle in the margin. The handle is VISUAL ONLY — pure
+       CSS can't make it draggable (see KNOWN LIMITATIONS). Skipped on empty
+       lines so it never clashes with the "Type '/'" hint. Deliberately only
+       touches background/::before — no width, margin, or alignment — so it
+       can't shift block layout. --- */
+body.plainpage-active-line .markdown-source-view.mod-cm6 .cm-line.cm-active {
+  background-color: var(--nt-hover);
+  border-radius: 3px;
+  position: relative;
+}
+body.plainpage-active-line .markdown-source-view.mod-cm6 .cm-line.cm-active:not(:empty)::before {
+  content: "⠿";
+  position: absolute;
+  left: -24px;
+  top: 0;
+  z-index: 2;
+  color: var(--nt-text-secondary);
+  font-size: 1.1em;
+  line-height: inherit;
+  pointer-events: none;
+}
+
+/* --- Colored headings: tint headings with the active palette's accent (works
+       with any palette since it reads --nt-accent), deepening toward the text
+       colour at smaller levels. Drives Obsidian's --h*-color vars so it applies
+       in both reading view and Live Preview. --- */
+body.plainpage-colored-headings {
+  --h1-color: var(--nt-accent);
+  --h2-color: var(--nt-accent);
+  --h3-color: color-mix(in srgb, var(--nt-accent) 80%, var(--nt-text-primary));
+  --h4-color: color-mix(in srgb, var(--nt-accent) 80%, var(--nt-text-primary));
+  --h5-color: color-mix(in srgb, var(--nt-accent) 60%, var(--nt-text-primary));
+  --h6-color: color-mix(in srgb, var(--nt-accent) 60%, var(--nt-text-primary));
+}
+
+/* ============================================================================
+   REGION 16 — COLOR PALETTES (selected via the "Plainpage Settings" plugin)
+   ----------------------------------------------------------------------------
+   Each palette re-defines only the Notion colour tokens (--nt-*); the mappings
+   in REGION 2 pick the new values up automatically, so links, tags, selection,
+   buttons, callouts and surfaces all recolour in one shot. No palette class =
+   the default Notion palette. Every scheme is hand-tuned for light AND dark.
+   ============================================================================ */
+
+/* ---- Graphite — crisp neutral cool-grey monochrome, clean blue accent ---- */
+body.theme-light.plainpage-palette-graphite {
+  --nt-bg: #ffffff;             --nt-bg-sidebar: #f6f7f8;      --nt-bg-elevated: #ffffff;
+  --nt-text-primary: rgb(38, 40, 44);
+  --nt-text-secondary: rgba(38, 40, 44, 0.64);
+  --nt-text-tertiary: rgba(38, 40, 44, 0.40);
+  --nt-hover: rgba(38, 40, 44, 0.06);   --nt-active: rgba(38, 40, 44, 0.10);
+  --nt-border: rgba(38, 40, 44, 0.10);  --nt-border-strong: rgba(38, 40, 44, 0.16);
+  --nt-code-inline-bg: rgba(38, 40, 44, 0.07);  --nt-code-block-bg: #f5f6f7;
+  --nt-accent: #2f6fed;         --nt-accent-bg: rgba(47, 111, 237, 0.12);
+}
+body.theme-dark.plainpage-palette-graphite {
+  --nt-bg: #1a1b1e;             --nt-bg-sidebar: #202225;     --nt-bg-elevated: #26282c;
+  --nt-text-primary: rgba(237, 238, 240, 0.90);
+  --nt-text-secondary: rgba(237, 238, 240, 0.50);
+  --nt-text-tertiary: rgba(237, 238, 240, 0.32);
+  --nt-hover: rgba(255, 255, 255, 0.055);  --nt-active: rgba(255, 255, 255, 0.09);
+  --nt-border: rgba(255, 255, 255, 0.10);  --nt-border-strong: rgba(255, 255, 255, 0.14);
+  --nt-code-inline-bg: rgba(255, 255, 255, 0.08);  --nt-code-block-bg: rgba(255, 255, 255, 0.035);
+  --nt-accent: #4c82f7;         --nt-accent-bg: rgba(76, 130, 247, 0.16);
+}
+
+/* ---- Sepia — warm paper, cozy reading, sand accent ---- */
+body.theme-light.plainpage-palette-sepia {
+  --nt-bg: #fbf9f4;             --nt-bg-sidebar: #f3efe6;     --nt-bg-elevated: #fbf9f4;
+  --nt-text-primary: rgb(60, 54, 44);
+  --nt-text-secondary: rgba(60, 54, 44, 0.62);
+  --nt-text-tertiary: rgba(60, 54, 44, 0.40);
+  --nt-hover: rgba(60, 54, 44, 0.06);   --nt-active: rgba(60, 54, 44, 0.11);
+  --nt-border: rgba(60, 54, 44, 0.11);  --nt-border-strong: rgba(60, 54, 44, 0.18);
+  --nt-code-inline-bg: rgba(60, 54, 44, 0.08);  --nt-code-block-bg: #f2ede2;
+  --nt-accent: #a5673f;         --nt-accent-bg: rgba(165, 103, 63, 0.14);
+  --nt-code-inline-text: #b0413e;
+}
+body.theme-dark.plainpage-palette-sepia {
+  --nt-bg: #1c1a17;            --nt-bg-sidebar: #232019;     --nt-bg-elevated: #29251d;
+  --nt-text-primary: rgba(237, 229, 214, 0.86);
+  --nt-text-secondary: rgba(237, 229, 214, 0.48);
+  --nt-text-tertiary: rgba(237, 229, 214, 0.30);
+  --nt-hover: rgba(255, 246, 230, 0.05);  --nt-active: rgba(255, 246, 230, 0.09);
+  --nt-border: rgba(255, 246, 230, 0.10); --nt-border-strong: rgba(255, 246, 230, 0.14);
+  --nt-code-inline-bg: rgba(255, 246, 230, 0.07);  --nt-code-block-bg: rgba(255, 246, 230, 0.035);
+  --nt-accent: #cf9b5e;        --nt-accent-bg: rgba(207, 155, 94, 0.16);
+  --nt-code-inline-text: #e0a072;
+}
+
+/* ---- Everforest — muted natural green, gentle on the eyes ---- */
+body.theme-light.plainpage-palette-everforest {
+  --nt-bg: #fdf6e3;            --nt-bg-sidebar: #f4f0d9;     --nt-bg-elevated: #fdf6e3;
+  --nt-text-primary: rgb(76, 85, 91);
+  --nt-text-secondary: rgba(76, 85, 91, 0.62);
+  --nt-text-tertiary: rgba(76, 85, 91, 0.40);
+  --nt-hover: rgba(76, 85, 91, 0.07);   --nt-active: rgba(76, 85, 91, 0.12);
+  --nt-border: rgba(76, 85, 91, 0.13);  --nt-border-strong: rgba(76, 85, 91, 0.20);
+  --nt-code-inline-bg: rgba(76, 85, 91, 0.09);  --nt-code-block-bg: #f4f0d9;
+  --nt-accent: #3a94c5;        --nt-accent-bg: rgba(58, 148, 197, 0.14);
+  --nt-code-inline-text: #f85552;
+}
+body.theme-dark.plainpage-palette-everforest {
+  --nt-bg: #2d353b;            --nt-bg-sidebar: #272e33;     --nt-bg-elevated: #323c41;
+  --nt-text-primary: rgba(211, 198, 170, 0.92);
+  --nt-text-secondary: rgba(211, 198, 170, 0.55);
+  --nt-text-tertiary: rgba(211, 198, 170, 0.35);
+  --nt-hover: rgba(211, 198, 170, 0.06);  --nt-active: rgba(211, 198, 170, 0.10);
+  --nt-border: rgba(211, 198, 170, 0.11); --nt-border-strong: rgba(211, 198, 170, 0.16);
+  --nt-code-inline-bg: rgba(211, 198, 170, 0.08);  --nt-code-block-bg: rgba(211, 198, 170, 0.04);
+  --nt-accent: #7fbbb3;        --nt-accent-bg: rgba(127, 187, 179, 0.16);
+  --nt-code-inline-text: #e67e80;
+}
+
+/* ---- Nord — cool arctic blue-greys ---- */
+body.theme-light.plainpage-palette-nord {
+  --nt-bg: #f4f6fa;            --nt-bg-sidebar: #e8ecf3;     --nt-bg-elevated: #f7f9fc;
+  --nt-text-primary: rgb(46, 52, 64);
+  --nt-text-secondary: rgba(46, 52, 64, 0.62);
+  --nt-text-tertiary: rgba(46, 52, 64, 0.40);
+  --nt-hover: rgba(46, 52, 64, 0.06);   --nt-active: rgba(46, 52, 64, 0.11);
+  --nt-border: rgba(46, 52, 64, 0.12);  --nt-border-strong: rgba(46, 52, 64, 0.18);
+  --nt-code-inline-bg: rgba(46, 52, 64, 0.08);  --nt-code-block-bg: #e8ecf3;
+  --nt-accent: #5e81ac;        --nt-accent-bg: rgba(94, 129, 172, 0.15);
+  --nt-code-inline-text: #bf616a;
+}
+body.theme-dark.plainpage-palette-nord {
+  --nt-bg: #2e3440;            --nt-bg-sidebar: #353c4a;     --nt-bg-elevated: #3b4252;
+  --nt-text-primary: rgba(216, 222, 233, 0.92);
+  --nt-text-secondary: rgba(216, 222, 233, 0.55);
+  --nt-text-tertiary: rgba(216, 222, 233, 0.34);
+  --nt-hover: rgba(216, 222, 233, 0.06);  --nt-active: rgba(216, 222, 233, 0.10);
+  --nt-border: rgba(216, 222, 233, 0.11); --nt-border-strong: rgba(216, 222, 233, 0.16);
+  --nt-code-inline-bg: rgba(216, 222, 233, 0.08);  --nt-code-block-bg: rgba(216, 222, 233, 0.04);
+  --nt-accent: #88c0d0;        --nt-accent-bg: rgba(136, 192, 208, 0.16);
+  --nt-code-inline-text: #bf616a;
+}
+
+/* ---- Rosé Pine — elegant muted mauve, iris accent ---- */
+body.theme-light.plainpage-palette-rose-pine {
+  --nt-bg: #fffaf3;            --nt-bg-sidebar: #faf4ed;     --nt-bg-elevated: #fffaf3;
+  --nt-text-primary: rgb(87, 82, 121);
+  --nt-text-secondary: rgba(87, 82, 121, 0.62);
+  --nt-text-tertiary: rgba(87, 82, 121, 0.40);
+  --nt-hover: rgba(87, 82, 121, 0.06);   --nt-active: rgba(87, 82, 121, 0.11);
+  --nt-border: rgba(87, 82, 121, 0.12);  --nt-border-strong: rgba(87, 82, 121, 0.18);
+  --nt-code-inline-bg: rgba(87, 82, 121, 0.08);  --nt-code-block-bg: #f2e9e1;
+  --nt-accent: #907aa9;        --nt-accent-bg: rgba(144, 122, 169, 0.15);
+  --nt-code-inline-text: #b4637a;
+}
+body.theme-dark.plainpage-palette-rose-pine {
+  --nt-bg: #191724;            --nt-bg-sidebar: #1f1d2e;     --nt-bg-elevated: #26233a;
+  --nt-text-primary: rgba(224, 222, 244, 0.92);
+  --nt-text-secondary: rgba(224, 222, 244, 0.55);
+  --nt-text-tertiary: rgba(224, 222, 244, 0.34);
+  --nt-hover: rgba(224, 222, 244, 0.06);  --nt-active: rgba(224, 222, 244, 0.10);
+  --nt-border: rgba(224, 222, 244, 0.10); --nt-border-strong: rgba(224, 222, 244, 0.15);
+  --nt-code-inline-bg: rgba(224, 222, 244, 0.07);  --nt-code-block-bg: rgba(224, 222, 244, 0.035);
+  --nt-accent: #c4a7e7;        --nt-accent-bg: rgba(196, 167, 231, 0.16);
+  --nt-code-inline-text: #eb6f92;
+}
+
+/* ---- Dim — lower contrast: a soft off-white in light, a lifted (not near-
+        black) charcoal in dark. Same Notion ink + blue, gentler surfaces. ---- */
+body.theme-light.plainpage-palette-dim {
+  --nt-bg: #f2f1ee;            --nt-bg-sidebar: #eae9e5;     --nt-bg-elevated: #faf9f7;
+  --nt-text-primary: rgb(55, 53, 47);
+  --nt-text-secondary: rgba(55, 53, 47, 0.62);
+  --nt-text-tertiary: rgba(55, 53, 47, 0.40);
+  --nt-hover: rgba(55, 53, 47, 0.06);   --nt-active: rgba(55, 53, 47, 0.11);
+  --nt-border: rgba(55, 53, 47, 0.11);  --nt-border-strong: rgba(55, 53, 47, 0.18);
+  --nt-code-inline-bg: rgba(55, 53, 47, 0.08);  --nt-code-block-bg: #e9e8e3;
+  --nt-accent: #2383e2;        --nt-accent-bg: rgba(35, 131, 226, 0.14);
+}
+body.theme-dark.plainpage-palette-dim {
+  --nt-bg: #262626;            --nt-bg-sidebar: #2e2e2e;     --nt-bg-elevated: #333333;
+  --nt-text-primary: rgba(255, 255, 255, 0.85);
+  --nt-text-secondary: rgba(255, 255, 255, 0.50);
+  --nt-text-tertiary: rgba(255, 255, 255, 0.32);
+  --nt-hover: rgba(255, 255, 255, 0.06);  --nt-active: rgba(255, 255, 255, 0.10);
+  --nt-border: rgba(255, 255, 255, 0.11); --nt-border-strong: rgba(255, 255, 255, 0.16);
+  --nt-code-inline-bg: rgba(255, 255, 255, 0.08);  --nt-code-block-bg: rgba(255, 255, 255, 0.045);
+  --nt-accent: #2383e2;        --nt-accent-bg: rgba(35, 131, 226, 0.16);
+}
+
+/* ---- Blush — warm rose & mauve (from #ffcdb2 #ffb4a2 #e5989b #b5838d #6d6875).
+        Light: blush-white paper, deep mauve-grey ink, rose accent.
+        Dark: plum-grey base, warm blush text, coral accent. ---- */
+body.theme-light.plainpage-palette-blush {
+  --nt-bg: #fdf7f4;            --nt-bg-sidebar: #f7ece7;     --nt-bg-elevated: #fffbf9;
+  --nt-text-primary: rgb(76, 71, 83);
+  --nt-text-secondary: rgba(76, 71, 83, 0.64);
+  --nt-text-tertiary: rgba(76, 71, 83, 0.42);
+  --nt-hover: rgba(109, 104, 117, 0.08);   --nt-active: rgba(109, 104, 117, 0.14);
+  --nt-border: rgba(109, 104, 117, 0.14);  --nt-border-strong: rgba(109, 104, 117, 0.22);
+  --nt-code-inline-bg: rgba(181, 131, 141, 0.16);  --nt-code-block-bg: #f7ece7;
+  --nt-accent: #a1596a;        --nt-accent-bg: rgba(181, 131, 141, 0.20);
+  --nt-code-inline-text: #b05c6a;
+}
+body.theme-dark.plainpage-palette-blush {
+  --nt-bg: #211f26;            --nt-bg-sidebar: #282630;     --nt-bg-elevated: #2f2c37;
+  --nt-text-primary: rgba(240, 226, 222, 0.90);
+  --nt-text-secondary: rgba(240, 226, 222, 0.52);
+  --nt-text-tertiary: rgba(240, 226, 222, 0.34);
+  --nt-hover: rgba(255, 205, 178, 0.06);  --nt-active: rgba(255, 205, 178, 0.10);
+  --nt-border: rgba(240, 226, 222, 0.11); --nt-border-strong: rgba(240, 226, 222, 0.16);
+  --nt-code-inline-bg: rgba(229, 152, 155, 0.14);  --nt-code-block-bg: rgba(255, 205, 178, 0.04);
+  --nt-accent: #e5989b;        --nt-accent-bg: rgba(229, 152, 155, 0.18);
+  --nt-code-inline-text: #ffb4a2;
+}
+
+/* ---- Terracotta — warm neutral greys with a dusty terracotta accent ---- */
+body.theme-light.plainpage-palette-terracotta {
+  /* Neutral greys rather than the blue-tinted whites; the terracotta accent
+     and a faint cool cast in the ink keep the warmth. */
+  --nt-bg: #e0e2e4;            --nt-bg-sidebar: #d7d9dc;     --nt-bg-elevated: #eff0f2;
+  --nt-text-primary: rgb(33, 36, 41);
+  --nt-text-secondary: rgba(33, 36, 41, 0.62);
+  --nt-text-tertiary: rgba(33, 36, 41, 0.40);
+  --nt-hover: rgba(33, 36, 41, 0.05);   --nt-active: rgba(33, 36, 41, 0.10);
+  --nt-border: rgba(33, 36, 41, 0.11);  --nt-border-strong: rgba(33, 36, 41, 0.17);
+  --nt-code-inline-bg: rgba(196, 122, 95, 0.16);  --nt-code-block-bg: #d4d6d9;
+  /* Same orange hue, pitched at the Goodnotes tone: saturation well back,
+     lightness lifted, so it reads as dusty terracotta not signal-orange. */
+  --nt-accent: #c47a5f;        --nt-accent-bg: rgba(196, 122, 95, 0.20);
+  --nt-code-inline-text: #b3684a;
+}
+body.theme-dark.plainpage-palette-terracotta {
+  /* Charcoal greys with only a trace of blue left in them. */
+  --nt-bg: #2d3033;            --nt-bg-sidebar: #34373b;     --nt-bg-elevated: #3b3e42;
+  --nt-text-primary: rgba(238, 240, 242, 0.90);
+  --nt-text-secondary: rgba(238, 240, 242, 0.52);
+  --nt-text-tertiary: rgba(238, 240, 242, 0.34);
+  --nt-hover: rgba(238, 240, 242, 0.06);  --nt-active: rgba(238, 240, 242, 0.10);
+  --nt-border: rgba(238, 240, 242, 0.11); --nt-border-strong: rgba(238, 240, 242, 0.16);
+  --nt-code-inline-bg: rgba(223, 163, 131, 0.16);  --nt-code-block-bg: rgba(238, 240, 242, 0.04);
+  /* Softened to a peach so it sits at the Goodnotes dark level. Hue held. */
+  --nt-accent: #dfa383;        --nt-accent-bg: rgba(223, 163, 131, 0.20);
+  --nt-code-inline-text: #e8b79c;
+}
+
+/* ---- Monochrome — greyscale only. Nothing carries hue, including the accent,
+        so hierarchy is expressed purely through tone. ---- */
+body.theme-light.plainpage-palette-mono {
+  --nt-bg: #ffffff;            --nt-bg-sidebar: #f2f2f2;     --nt-bg-elevated: #ffffff;
+  --nt-text-primary: rgb(28, 28, 28);
+  --nt-text-secondary: rgba(28, 28, 28, 0.62);
+  --nt-text-tertiary: rgba(28, 28, 28, 0.40);
+  --nt-hover: rgba(28, 28, 28, 0.055);  --nt-active: rgba(28, 28, 28, 0.11);
+  --nt-border: rgba(28, 28, 28, 0.12);  --nt-border-strong: rgba(28, 28, 28, 0.19);
+  --nt-code-inline-bg: rgba(28, 28, 28, 0.07);  --nt-code-block-bg: #f0f0f0;
+  --nt-accent: #3f3f3f;        --nt-accent-bg: rgba(28, 28, 28, 0.10);
+  --nt-code-inline-text: #333333;
+}
+body.theme-dark.plainpage-palette-mono {
+  --nt-bg: #171717;            --nt-bg-sidebar: #1f1f1f;     --nt-bg-elevated: #262626;
+  --nt-text-primary: rgba(255, 255, 255, 0.86);
+  --nt-text-secondary: rgba(255, 255, 255, 0.50);
+  --nt-text-tertiary: rgba(255, 255, 255, 0.32);
+  --nt-hover: rgba(255, 255, 255, 0.06);  --nt-active: rgba(255, 255, 255, 0.11);
+  --nt-border: rgba(255, 255, 255, 0.11); --nt-border-strong: rgba(255, 255, 255, 0.17);
+  --nt-code-inline-bg: rgba(255, 255, 255, 0.08);  --nt-code-block-bg: rgba(255, 255, 255, 0.045);
+  --nt-accent: #cfcfcf;        --nt-accent-bg: rgba(255, 255, 255, 0.12);
+  --nt-code-inline-text: #d6d6d6;
+}
+
+/* Monochrome callouts: separated by tone, not hue. */
+body.plainpage-palette-mono {
+  --nt-callout-gray:   rgba(128, 128, 128, 0.10);
+  --nt-callout-blue:   rgba(128, 128, 128, 0.13);
+  --nt-callout-green:  rgba(128, 128, 128, 0.08);
+  --nt-callout-yellow: rgba(128, 128, 128, 0.16);
+  --nt-callout-red:    rgba(128, 128, 128, 0.20);
+  --nt-callout-orange: rgba(128, 128, 128, 0.18);
+  --nt-callout-purple: rgba(128, 128, 128, 0.11);
+}
+
+/* --- Neutralise the dashboard's hardcoded semantic colours ------------------
+   Cards, chips and status pills otherwise stay red/amber/green regardless of
+   palette. Under monochrome they map onto a five-step grey ramp: "hotter"
+   semantics get darker in light mode and brighter in dark mode, so urgency is
+   still legible without colour. --------------------------------------------- */
+body.plainpage-palette-mono .dashboard {
+  --mono-1: #2b2b2b;   /* strongest  */
+  --mono-2: #4a4a4a;
+  --mono-3: #6e6e6e;
+  --mono-4: #909090;
+  --mono-5: #b4b4b4;   /* faintest   */
+}
+body.theme-dark.plainpage-palette-mono .dashboard {
+  --mono-1: #ededed;
+  --mono-2: #cfcfcf;
+  --mono-3: #ababab;
+  --mono-4: #8a8a8a;
+  --mono-5: #6b6b6b;
+}
+/* Per-card accent tokens (At a glance, Quick links, card columns) */
+body.plainpage-palette-mono .dashboard .wd-blue   { --card-color: var(--mono-2); }
+body.plainpage-palette-mono .dashboard .wd-purple { --card-color: var(--mono-3); }
+body.plainpage-palette-mono .dashboard .wd-green  { --card-color: var(--mono-4); }
+body.plainpage-palette-mono .dashboard .wd-amber  { --card-color: var(--mono-1); }
+body.plainpage-palette-mono .dashboard .wd-cyan   { --card-color: var(--mono-3); }
+body.plainpage-palette-mono .dashboard .wd-pink   { --card-color: var(--mono-4); }
+body.plainpage-palette-mono .dashboard .wd-slate  { --card-color: var(--mono-5); }
+
+/* Left/top edges that hardcode a hue */
+body.plainpage-palette-mono .dashboard .wd-task-card.p0 { border-left-color: var(--mono-1); border-top-color: var(--mono-1); }
+body.plainpage-palette-mono .dashboard .wd-task-card.p1 { border-left-color: var(--mono-2); border-top-color: var(--mono-2); }
+body.plainpage-palette-mono .dashboard .wd-task-card.p2 { border-left-color: var(--mono-3); border-top-color: var(--mono-3); }
+body.plainpage-palette-mono .dashboard .wd-task-card.p4 { border-left-color: var(--mono-4); border-top-color: var(--mono-4); }
+body.plainpage-palette-mono .dashboard .wd-allclear { border-left-color: var(--mono-4); }
+body.plainpage-palette-mono .dashboard .wd-task-card.is-overdue {
+  border-left-color: var(--mono-1);
+  background-color: var(--nt-bg-sidebar);
+}
+
+/* Coloured text + chip fills */
+body.plainpage-palette-mono .dashboard .wd-task-pri,
+body.plainpage-palette-mono .dashboard .wd-task-due {
+  background-color: var(--nt-hover);
+  color: var(--nt-text-secondary);
+}
+body.plainpage-palette-mono .dashboard .wd-task-pri.p0,
+body.plainpage-palette-mono .dashboard .wd-task-due.is-overdue {
+  background-color: var(--nt-active);
+  color: var(--nt-text-primary);
+  font-weight: 600;
+}
+/* ---- Goodnotes — muted peach, clay, sage and forest on warm paper.
+        Source hexes: ecb68c f2d5cc d7a08f cec099 61796f a3c0ba 58696d 3c3c49 ---- */
+body.theme-light.plainpage-palette-goodnotes {
+  --nt-bg: #faf7f2;            --nt-bg-sidebar: #f2ece3;     --nt-bg-elevated: #fffdfa;
+  --nt-text-primary: rgb(60, 60, 73);
+  --nt-text-secondary: rgba(60, 60, 73, 0.62);
+  --nt-text-tertiary: rgba(60, 60, 73, 0.40);
+  --nt-hover: rgba(60, 60, 73, 0.055);  --nt-active: rgba(60, 60, 73, 0.11);
+  --nt-border: rgba(60, 60, 73, 0.12);  --nt-border-strong: rgba(60, 60, 73, 0.19);
+  --nt-code-inline-bg: rgba(88, 105, 109, 0.14);  --nt-code-block-bg: #f1ebe1;
+  --nt-accent: #58696d;        --nt-accent-bg: rgba(163, 192, 186, 0.32);
+  --nt-code-inline-text: #a3564a;
+}
+body.theme-dark.plainpage-palette-goodnotes {
+  --nt-bg: #2b2b34;            --nt-bg-sidebar: #33333e;     --nt-bg-elevated: #3b3b47;
+  --nt-text-primary: rgba(242, 213, 204, 0.88);
+  --nt-text-secondary: rgba(242, 213, 204, 0.52);
+  --nt-text-tertiary: rgba(242, 213, 204, 0.34);
+  --nt-hover: rgba(242, 213, 204, 0.06);  --nt-active: rgba(242, 213, 204, 0.11);
+  --nt-border: rgba(242, 213, 204, 0.12); --nt-border-strong: rgba(242, 213, 204, 0.18);
+  --nt-code-inline-bg: rgba(163, 192, 186, 0.16);  --nt-code-block-bg: rgba(242, 213, 204, 0.05);
+  --nt-accent: #a3c0ba;        --nt-accent-bg: rgba(163, 192, 186, 0.20);
+  --nt-code-inline-text: #ecb68c;
+}
+
+/* --- Per-palette dashboard accent sets --------------------------------------
+   Seven slots, used by the colour classes above in this order:
+     1 primary · 2 secondary · 3 positive · 4 warning · 5 cool · 6 accent · 7 neutral
+   --------------------------------------------------------------------------- */
+/* Default (Notion) + palettes that share its cool set, stated explicitly so
+   every palette has a dashboard set rather than relying on the fallback. */
+body.theme-light, body.theme-dark {
+  --nt-dash-1: #2383e2;  --nt-dash-2: #9a6dd7;  --nt-dash-3: #2d9964;
+  --nt-dash-4: #d9730d;  --nt-dash-5: #4aa3b8;  --nt-dash-6: #d75f96;
+  --nt-dash-7: #7a7a85;
+}
+body.plainpage-palette-graphite {
+  --nt-dash-1: #2f6fed;  --nt-dash-2: #7c5cd6;  --nt-dash-3: #2f8f63;
+  --nt-dash-4: #c96a12;  --nt-dash-5: #3f93ad;  --nt-dash-6: #c8557f;
+  --nt-dash-7: #74747f;
+}
+body.plainpage-palette-dim {
+  --nt-dash-1: #3b86d1;  --nt-dash-2: #8f6bc4;  --nt-dash-3: #35875e;
+  --nt-dash-4: #c26f1c;  --nt-dash-5: #4a93a4;  --nt-dash-6: #c26288;
+  --nt-dash-7: #7e7e88;
+}
+body.plainpage-palette-goodnotes {
+  --nt-dash-1: #58696d;  --nt-dash-2: #d7a08f;  --nt-dash-3: #61796f;
+  --nt-dash-4: #ecb68c;  --nt-dash-5: #a3c0ba;  --nt-dash-6: #cec099;
+  --nt-dash-7: #8b8b96;
+}
+body.theme-dark.plainpage-palette-goodnotes {
+  --nt-dash-1: #a3c0ba;  --nt-dash-2: #d7a08f;  --nt-dash-3: #8fae9f;
+  --nt-dash-4: #ecb68c;  --nt-dash-5: #9fc4c9;  --nt-dash-6: #cec099;
+  --nt-dash-7: #9a9aa6;
+}
+body.plainpage-palette-sepia {
+  --nt-dash-1: #a5673f;  --nt-dash-2: #b0413e;  --nt-dash-3: #7a8c5a;
+  --nt-dash-4: #cf9b5e;  --nt-dash-5: #8c9a8e;  --nt-dash-6: #c08552;
+  --nt-dash-7: #8a8178;
+}
+body.plainpage-palette-everforest {
+  --nt-dash-1: #3a94c5;  --nt-dash-2: #d699b6;  --nt-dash-3: #8da101;
+  --nt-dash-4: #dfa000;  --nt-dash-5: #7fbbb3;  --nt-dash-6: #e69875;
+  --nt-dash-7: #939f91;
+}
+body.plainpage-palette-nord {
+  --nt-dash-1: #5e81ac;  --nt-dash-2: #b48ead;  --nt-dash-3: #a3be8c;
+  --nt-dash-4: #d08770;  --nt-dash-5: #88c0d0;  --nt-dash-6: #bf616a;
+  --nt-dash-7: #8892a0;
+}
+body.plainpage-palette-rose-pine {
+  --nt-dash-1: #907aa9;  --nt-dash-2: #b4637a;  --nt-dash-3: #286983;
+  --nt-dash-4: #ea9d34;  --nt-dash-5: #56949f;  --nt-dash-6: #d7827e;
+  --nt-dash-7: #9893a5;
+}
+body.plainpage-palette-blush {
+  --nt-dash-1: #a1596a;  --nt-dash-2: #b5838d;  --nt-dash-3: #6d6875;
+  --nt-dash-4: #e5989b;  --nt-dash-5: #9d8a9b;  --nt-dash-6: #c98f86;
+  --nt-dash-7: #9a9099;
+}
+/* Same seven hues, muted to the Goodnotes level. */
+body.plainpage-palette-terracotta {
+  --nt-dash-1: #c47a5f;  --nt-dash-2: #8f86a8;  --nt-dash-3: #6b8a77;
+  --nt-dash-4: #d09a6b;  --nt-dash-5: #7a9aa6;  --nt-dash-6: #b58089;
+  --nt-dash-7: #8d8d92;
+}
+
+/* Callout tints for every non-default palette: semantic hues as low-alpha
+   overlays, so they sit harmoniously over each palette's own background.
+   (The default Notion palette keeps its bespoke solid pastels from REGION 1.)
+   Add a palette's class to both lists below when introducing a new scheme. */
+body.theme-light:is(.plainpage-palette-graphite, .plainpage-palette-sepia, .plainpage-palette-everforest, .plainpage-palette-nord, .plainpage-palette-rose-pine, .plainpage-palette-dim, .plainpage-palette-blush, .plainpage-palette-terracotta, .plainpage-palette-mono, .plainpage-palette-goodnotes) {
+  --nt-callout-gray: rgba(120, 119, 116, 0.10);
+  --nt-callout-blue: rgba(35, 131, 226, 0.10);
+  --nt-callout-green: rgba(45, 153, 100, 0.11);
+  --nt-callout-yellow: rgba(203, 145, 47, 0.13);
+  --nt-callout-red: rgba(235, 87, 87, 0.10);
+  --nt-callout-orange: rgba(217, 115, 13, 0.11);
+  --nt-callout-purple: rgba(154, 109, 215, 0.11);
+}
+body.theme-dark:is(.plainpage-palette-graphite, .plainpage-palette-sepia, .plainpage-palette-everforest, .plainpage-palette-nord, .plainpage-palette-rose-pine, .plainpage-palette-dim, .plainpage-palette-blush, .plainpage-palette-terracotta, .plainpage-palette-mono, .plainpage-palette-goodnotes) {
+  --nt-callout-gray: rgba(255, 255, 255, 0.055);
+  --nt-callout-blue: rgba(35, 131, 226, 0.14);
+  --nt-callout-green: rgba(45, 153, 100, 0.14);
+  --nt-callout-yellow: rgba(203, 145, 47, 0.16);
+  --nt-callout-red: rgba(235, 87, 87, 0.14);
+  --nt-callout-orange: rgba(217, 115, 13, 0.15);
+  --nt-callout-purple: rgba(154, 109, 215, 0.15);
+}
+
+
+/* ============================================================================
+   REGION 17 — PAGE ICON & COVER BANNER
+   ----------------------------------------------------------------------------
+   Frontmatter-driven, rendered by the "Plainpage Settings" plugin into the editor
+   (Live Preview) and reading-view sizers:
+     cover: https://…/image.jpg   (or a vault image, or [[image.png]])
+     icon:  📓                     (any emoji / character)
+   Both are optional and inert when absent.
+   ============================================================================ */
+.plainpage-banner {
+  height: var(--nt-banner-height, 200px);
+  margin: 0 0 8px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 6px 6px 0 0;
+  /* Emerge into the page: hold the photo fully opaque for most of its height,
+     then fall off on an eased curve over the last third. A plain two-stop
+     linear ramp leaves a flat grey haze across the middle — these extra stops
+     approximate ease-in-out so the image dissolves cleanly into the page. */
+  --nt-banner-fade:
+    linear-gradient(to bottom,
+      #000 0%,
+      #000 64%,
+      rgba(0, 0, 0, 0.94) 73%,
+      rgba(0, 0, 0, 0.78) 81%,
+      rgba(0, 0, 0, 0.52) 88%,
+      rgba(0, 0, 0, 0.24) 94%,
+      rgba(0, 0, 0, 0.06) 98%,
+      transparent 100%);
+  -webkit-mask-image: var(--nt-banner-fade);
+  mask-image: var(--nt-banner-fade);
+}
+
+/* Hide page properties on notes with `cssclasses: hide-properties`.
+   Lives in the theme so it doesn't depend on a snippet being enabled. */
+.hide-properties .metadata-container,
+.markdown-source-view.hide-properties .metadata-container,
+.markdown-reading-view.hide-properties .metadata-container,
+.hide-properties .frontmatter {
+  display: none !important;
+}
+.plainpage-page-icon {
+  font-size: 64px;
+  line-height: 1;
+  margin: 4px 0;
+  user-select: none;
+}
+/* When a cover is present, overlap the icon onto its lower edge, Notion-style */
+.plainpage-banner + .plainpage-page-icon {
+  position: relative;
+  margin-top: -48px;
+  z-index: 1;
+}
+
+/* Page icons beside file names in the explorer and tab headers (plugin-injected) */
+.plainpage-nav-icon,
+.plainpage-tab-icon {
+  margin-right: 5px;
+  font-size: 0.95em;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   REGION 18 — EXTRA BLOCK POLISH
+   Code-block chrome (3), fold arrows (4), table polish (8), breadcrumb (9).
+   ============================================================================ */
+
+/* --- 3. Code block chrome — language label + Notion-style copy button.
+   (In Live Preview the language already shows in the ``` fence line; this adds
+   the label + copy pill to reading view so both modes match.) --- */
+.markdown-rendered pre {
+  position: relative;
+  padding-top: 34px;
+}
+.markdown-rendered pre > code[class*="language-"]::before {
+  content: "code";
+  position: absolute;
+  top: 9px;
+  left: 16px;
+  font-family: var(--nt-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--nt-text-tertiary);
+}
+.markdown-rendered pre > code[class~="language-python"]::before,
+.markdown-rendered pre > code[class~="language-py"]::before { content: "python"; }
+.markdown-rendered pre > code[class~="language-javascript"]::before,
+.markdown-rendered pre > code[class~="language-js"]::before { content: "javascript"; }
+.markdown-rendered pre > code[class~="language-typescript"]::before,
+.markdown-rendered pre > code[class~="language-ts"]::before { content: "typescript"; }
+.markdown-rendered pre > code[class~="language-jsx"]::before { content: "jsx"; }
+.markdown-rendered pre > code[class~="language-tsx"]::before { content: "tsx"; }
+.markdown-rendered pre > code[class~="language-json"]::before { content: "json"; }
+.markdown-rendered pre > code[class~="language-yaml"]::before,
+.markdown-rendered pre > code[class~="language-yml"]::before { content: "yaml"; }
+.markdown-rendered pre > code[class~="language-bash"]::before,
+.markdown-rendered pre > code[class~="language-sh"]::before,
+.markdown-rendered pre > code[class~="language-shell"]::before,
+.markdown-rendered pre > code[class~="language-zsh"]::before { content: "bash"; }
+.markdown-rendered pre > code[class~="language-sql"]::before { content: "sql"; }
+.markdown-rendered pre > code[class~="language-css"]::before { content: "css"; }
+.markdown-rendered pre > code[class~="language-scss"]::before { content: "scss"; }
+.markdown-rendered pre > code[class~="language-html"]::before { content: "html"; }
+.markdown-rendered pre > code[class~="language-xml"]::before { content: "xml"; }
+.markdown-rendered pre > code[class~="language-markdown"]::before,
+.markdown-rendered pre > code[class~="language-md"]::before { content: "markdown"; }
+.markdown-rendered pre > code[class~="language-java"]::before { content: "java"; }
+.markdown-rendered pre > code[class~="language-go"]::before { content: "go"; }
+.markdown-rendered pre > code[class~="language-rust"]::before,
+.markdown-rendered pre > code[class~="language-rs"]::before { content: "rust"; }
+.markdown-rendered pre > code[class~="language-c"]::before { content: "c"; }
+.markdown-rendered pre > code[class~="language-cpp"]::before { content: "c++"; }
+.markdown-rendered pre > code[class~="language-csharp"]::before,
+.markdown-rendered pre > code[class~="language-cs"]::before { content: "c#"; }
+.markdown-rendered pre > code[class~="language-ruby"]::before,
+.markdown-rendered pre > code[class~="language-rb"]::before { content: "ruby"; }
+.markdown-rendered pre > code[class~="language-php"]::before { content: "php"; }
+.markdown-rendered pre > code[class~="language-kotlin"]::before,
+.markdown-rendered pre > code[class~="language-kt"]::before { content: "kotlin"; }
+.markdown-rendered pre > code[class~="language-swift"]::before { content: "swift"; }
+.markdown-rendered pre > code[class~="language-dockerfile"]::before { content: "dockerfile"; }
+.markdown-rendered pre > code[class~="language-toml"]::before { content: "toml"; }
+.markdown-rendered pre > code[class~="language-diff"]::before { content: "diff"; }
+
+.markdown-rendered pre > button.copy-code-button {
+  top: 6px;
+  right: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--nt-text-secondary);
+  background-color: var(--nt-hover);
+  border: none;
+  border-radius: var(--nt-radius-hover);
+  opacity: 0;
+  transition: opacity 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+.markdown-rendered pre:hover > button.copy-code-button { opacity: 1; }
+.markdown-rendered pre > button.copy-code-button:hover {
+  color: var(--nt-text-primary);
+  background-color: var(--nt-active);
+}
+
+/* --- 4. Fold arrows — tint Obsidian's collapse indicators like Notion toggles
+   (subtle grey, darker on hover; the rotate is already handled by Obsidian). --- */
+.markdown-preview-view .heading-collapse-indicator,
+.markdown-source-view .cm-fold-indicator,
+.callout-fold,
+.markdown-source-view .cm-foldGutter .cm-gutterElement {
+  color: var(--nt-text-tertiary);
+  transition: color 120ms ease, transform 120ms ease;
+}
+.markdown-preview-view .heading-collapse-indicator:hover,
+.callout-fold:hover,
+.markdown-source-view .cm-foldGutter .cm-gutterElement:hover {
+  color: var(--nt-text-secondary);
+}
+
+/* --- 8. Table polish — rounded outer corners, header fill, sticky header,
+   row hover. (Covers reading view and Live Preview rendered tables.) --- */
+:is(.markdown-rendered, .markdown-source-view) table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--nt-border);
+  border-radius: 6px;
+}
+:is(.markdown-rendered, .markdown-source-view) th,
+:is(.markdown-rendered, .markdown-source-view) td {
+  border: none;
+  border-inline-end: 1px solid var(--nt-border);
+  border-block-end: 1px solid var(--nt-border);
+}
+:is(.markdown-rendered, .markdown-source-view) th:last-child,
+:is(.markdown-rendered, .markdown-source-view) td:last-child { border-inline-end: none; }
+:is(.markdown-rendered, .markdown-source-view) tr:last-child > td { border-block-end: none; }
+/* Round the top corners so the header fill doesn't square them off */
+:is(.markdown-rendered, .markdown-source-view) thead tr:first-child th:first-child { border-top-left-radius: 6px; }
+:is(.markdown-rendered, .markdown-source-view) thead tr:first-child th:last-child { border-top-right-radius: 6px; }
+:is(.markdown-rendered, .markdown-source-view) thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--nt-bg-sidebar);
+}
+:is(.markdown-rendered, .markdown-source-view) tbody tr:hover > td { background-color: var(--nt-hover); }
+
+/* --- 9. Breadcrumb view-header — clean Notion-style path (Folder / Sub / Page) --- */
+.view-header-title-parent { min-width: 0; }
+.view-header-breadcrumb {
+  color: var(--nt-text-tertiary);
+  font-size: 13px;
+}
+.view-header-breadcrumb:hover {
+  color: var(--nt-text-secondary);
+  text-decoration: underline;
+}
+.view-header-breadcrumb-separator { color: var(--nt-text-tertiary); opacity: 0.6; }
+.view-header-title {
+  color: var(--nt-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ============================================================================
+   REGION 19 — DASHBOARD (cssclass: dashboard)
+   ----------------------------------------------------------------------------
+   Notion-aligned styling for a dashboard note's dataviewjs panels: stat
+   cards, quick links, task cards, sections, tables. Selectors are prefixed
+   with `body` so they outrank any snippet, because snippets load after
+   themes.
+   ============================================================================ */
+
+/* Undo the 2022 dashboard.css flourishes that fight the Notion look */
+body .dashboard h1 { border-bottom: none !important; padding-bottom: 0 !important; }
+body .dashboard .markdown-preview-section .title { position: static; letter-spacing: -0.01em; }
+
+/* Greeting block: small muted date above, large greeting below, with a short
+   accent rule down the left. `.wd-greeting` stays the plain subtitle style used
+   by the other dashboards — the two are deliberately separate. */
+/* Header row: greeting left, quick capture right; stacks on narrow panes. */
+body .dashboard .wd-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0.2em 0 1.5em;
+}
+body .dashboard .wd-topbar .wd-hello { margin: 0; }
+body .dashboard .wd-topbar .wd-quickadd {
+  flex: 1 1 340px;
+  max-width: 640px;
+  margin: 0;
+  justify-content: flex-end;
+}
+
+body .dashboard .wd-hello {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0.2em 0 1.5em;
+  padding-left: 12px;
+  border-left: 2px solid var(--nt-accent);
+}
+body .dashboard .wd-hello-date {
+  color: var(--wd-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+body .dashboard .wd-hello-text {
+  color: var(--nt-text-primary);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.012em;
+}
+
+/* Plain subtitle line under the dashboard title */
+body .dashboard .wd-greeting {
+  margin: 0 0 0.2em;
+  color: var(--nt-text-secondary);
+  font-size: 15px;
+}
+body .dashboard .wd-subtle { color: var(--nt-text-secondary); font-size: 14px; }
+
+/* --- Stat cards: flat Notion surfaces, a small colour dot instead of a bar --- */
+body .dashboard .wd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 1em 0 1.6em;
+}
+/* Dashboard accent slots. The colour classes point at --nt-dash-* tokens, which
+   each palette can redefine (see REGION 16) — that is what makes the dashboard
+   follow the active palette. The fallbacks are the default Notion set, so a
+   palette that defines nothing still looks right. */
+body .dashboard .wd-blue   { --card-color: var(--nt-dash-1, #2383e2); }
+body .dashboard .wd-purple { --card-color: var(--nt-dash-2, #9a6dd7); }
+body .dashboard .wd-green  { --card-color: var(--nt-dash-3, #2d9964); }
+body .dashboard .wd-amber  { --card-color: var(--nt-dash-4, #d9730d); }
+body .dashboard .wd-cyan   { --card-color: var(--nt-dash-5, #4aa3b8); }
+body .dashboard .wd-pink   { --card-color: var(--nt-dash-6, #d75f96); }
+body .dashboard .wd-slate  { --card-color: var(--nt-dash-7, #7a7a85); }
+
+/* At a glance: tinted surface + coloured top edge, one hue per metric */
+body .dashboard .wd-card {
+  padding: 13px 15px;
+  border: 1px solid var(--nt-border-strong);
+  border-left: 1px solid var(--nt-border-strong);
+  border-top: 2px solid var(--card-color, var(--nt-accent));
+  border-radius: 7px;
+  background-color: color-mix(in srgb, var(--card-color, var(--nt-accent)) 7%, var(--nt-bg-sidebar));
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.04);
+  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+body .dashboard .wd-card:hover {
+  background-color: color-mix(in srgb, var(--card-color, var(--nt-accent)) 14%, var(--nt-bg-sidebar));
+  border-color: var(--nt-border-strong);
+  border-top-color: var(--card-color, var(--nt-accent));
+  box-shadow: 0 2px 6px rgba(15, 15, 15, 0.07);
+}
+/* Cards that navigate somewhere: pointer affordance + keyboard focus ring */
+body .dashboard .wd-card.is-clickable { cursor: pointer; }
+body .dashboard .wd-card.is-clickable:focus-visible {
+  outline: none;
+  border-color: var(--nt-accent);
+  box-shadow: 0 0 0 2px var(--nt-accent-bg), 0 2px 6px rgba(15, 15, 15, 0.07);
+}
+body .dashboard .wd-card.is-clickable:active { background-color: var(--nt-hover); }
+body .dashboard .wd-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--nt-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+body .dashboard .wd-label::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--card-color, var(--nt-accent));
+  flex-shrink: 0;
+}
+body .dashboard .wd-value {
+  margin: 0.15em 0 0.1em;
+  color: var(--nt-text-primary);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+body .dashboard .wd-detail { color: var(--nt-text-tertiary); font-size: 12px; }
+
+/* --- Quick links: compact link cards --- */
+body .dashboard .wd-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+  margin: 1em 0 1.6em;
+}
+/* Quick links: deliberately a different treatment from the stat cards — the
+   colour lives in a rounded icon chip and a left rule, not a surface tint, so
+   the two sections read as distinct at a glance. */
+body .dashboard .wd-link-card {
+  padding: 13px 15px;
+  border: 1px solid var(--nt-border-strong);
+  border-left: 3px solid var(--card-color, var(--nt-accent));
+  border-radius: 7px;
+  background-color: var(--nt-bg-sidebar);
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.04);
+  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+body .dashboard .wd-link-card:hover {
+  background-color: color-mix(in srgb, var(--card-color, var(--nt-accent)) 8%, var(--nt-bg-elevated));
+  box-shadow: 0 2px 6px rgba(15, 15, 15, 0.07);
+}
+body .dashboard .wd-link-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+body .dashboard .wd-link-icon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background-color: color-mix(in srgb, var(--card-color, var(--nt-accent)) 18%, transparent);
+  font-size: 13px;
+  line-height: 1;
+}
+body .dashboard .wd-link-title {
+  color: var(--nt-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+body .dashboard .wd-link-items { display: flex; flex-direction: column; gap: 2px; }
+body .dashboard .wd-link-items a.internal-link {
+  color: var(--nt-text-secondary);
+  font-size: 13px;
+  text-decoration: none;
+  padding: 2px 0;
+}
+body .dashboard .wd-link-items a.internal-link:hover {
+  color: var(--nt-text-primary);
+  text-decoration: underline;
+  text-decoration-color: var(--nt-text-tertiary);
+}
+
+/* --- Unified secondary text -------------------------------------------------
+   Every card's supporting copy (labels, details, customer, counts, timestamps,
+   quick links) resolves to ONE token, so the whole dashboard reads at the same
+   weight instead of drifting between secondary and tertiary. Mixed from the
+   primary text colour, so it's darker than the theme default in light mode and
+   correspondingly brighter in dark mode — and it follows every palette.
+   Declared last in the region so it wins over the per-component colours above;
+   `.is-stale` keeps its amber (higher specificity).                          */
+body .dashboard {
+  --wd-secondary: color-mix(in srgb, var(--nt-text-primary) 82%, transparent);
+}
+body .dashboard .wd-label,
+body .dashboard .wd-detail,
+body .dashboard .wd-greeting,
+body .dashboard .wd-subtle,
+body .dashboard .wd-link-items a.internal-link,
+body .dashboard a.wd-link-search,
+body .dashboard .wd-link-count {
+  color: var(--wd-secondary);
+}
+/* Hover still lifts links to full primary */
+body .dashboard .wd-link-items a.internal-link:hover,
+body .dashboard a.wd-link-search:hover {
+  color: var(--nt-text-primary);
+}
+
+/* --- Activity sparkline --------------------------------------------------- */
+body .dashboard .wd-spark {
+  padding: 12px 15px;
+  margin: 0 0 1.6em;
+  border: 1px solid var(--nt-border-strong);
+  border-radius: 7px;
+  background-color: var(--nt-bg-sidebar);
+}
+body .dashboard .wd-spark-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+body .dashboard .wd-spark-title { color: var(--nt-text-primary); font-size: 13px; font-weight: 600; }
+body .dashboard .wd-spark-sub { color: var(--wd-secondary); font-size: 11px; }
+body .dashboard .wd-spark-bars {
+  display: flex;
+  height: 40px;
+  align-items: flex-end;
+  gap: 4px;
+}
+body .dashboard .wd-spark-col {
+  display: flex;
+  height: 100%;
+  flex: 1;
+  align-items: flex-end;
+}
+body .dashboard .wd-spark-bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 2px;
+  background-color: color-mix(in srgb, var(--nt-accent) 55%, transparent);
+  transition: background-color 120ms ease;
+}
+body .dashboard .wd-spark-bar.is-empty { background-color: var(--nt-hover); }
+body .dashboard .wd-spark-bar.is-today { background-color: var(--nt-accent); }
+body .dashboard .wd-spark-col:hover .wd-spark-bar { background-color: var(--nt-accent); }
+
+/* --- Palette switcher ------------------------------------------------------- */
+body .dashboard .wd-palettes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0 0 1.6em;
+}
+body .dashboard button.wd-swatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px 5px 9px;
+  border: 1px solid var(--nt-border-strong);
+  border-radius: 999px;
+  background-color: var(--nt-bg-sidebar);
+  color: var(--wd-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+body .dashboard button.wd-swatch:hover {
+  background-color: var(--nt-bg-elevated);
+  color: var(--nt-text-primary);
+}
+body .dashboard button.wd-swatch.is-active {
+  border-color: var(--swatch);
+  background-color: color-mix(in srgb, var(--swatch) 12%, var(--nt-bg-sidebar));
+  color: var(--nt-text-primary);
+  font-weight: 500;
+}
+body .dashboard .wd-swatch-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background-color: var(--swatch);
+  flex-shrink: 0;
+}
+
+/* --- Quick add to task inbox ------------------------------------------------ */
+body .dashboard .wd-quickadd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 1em;
+}
+body .dashboard input.wd-quickadd-input {
+  flex: 1;
+  max-width: 460px;
+  padding: 6px 11px;
+  border: 1px solid var(--nt-border-strong);
+  border-radius: 7px;
+  background-color: var(--nt-bg);
+  color: var(--nt-text-primary);
+  font-size: 13px;
+}
+body .dashboard input.wd-quickadd-input:focus {
+  border-color: var(--nt-accent);
+  box-shadow: 0 0 0 2px var(--nt-accent-bg);
+  outline: none;
+}
+body .dashboard button.wd-quickadd-btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 7px;
+  background-color: var(--nt-accent);
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+body .dashboard button.wd-quickadd-btn:hover { background-color: var(--interactive-accent-hover); }
+body .dashboard .wd-quickadd-note { color: var(--wd-secondary); font-size: 12px; }
+body .dashboard select.wd-quickadd-pri,
+body .dashboard input.wd-quickadd-due {
+  padding: 5px 9px;
+  border: 1px solid var(--nt-border-strong);
+  border-radius: 7px;
+  background-color: var(--nt-bg);
+  color: var(--nt-text-primary);
+  font-size: 12px;
+}
+body .dashboard input.wd-quickadd-due { color-scheme: light dark; }
+
+/* --- Task cards (checkbox + text, chips in the footer) ---------------------- */
+body .dashboard .wd-task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 8px;
+  margin: 0 0 1.6em;
+}
+body .dashboard .wd-task-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 11px 13px;
+  border: 1px solid var(--nt-border-strong);
+  /* Left edge carries the priority; overdue overrides it below. */
+  border-left: 3px solid var(--nt-border-strong);
+  border-radius: 7px;
+  background-color: var(--nt-bg-sidebar);
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.04);
+  font-size: 13px;
+  transition: background-color 120ms ease, box-shadow 120ms ease, opacity 180ms ease;
+}
+body .dashboard .wd-task-card:hover {
+  background-color: var(--nt-bg-elevated);
+  box-shadow: 0 2px 6px rgba(15, 15, 15, 0.07);
+}
+body .dashboard .wd-task-card.p0 { border-left-color: #eb5757; }
+body .dashboard .wd-task-card.p1 { border-left-color: #d9730d; }
+body .dashboard .wd-task-card.p2 { border-left-color: #cb912f; }
+body .dashboard .wd-task-card.p4 { border-left-color: #4aa3b8; }
+body .dashboard .wd-task-card.p5 { border-left-color: var(--nt-text-tertiary); }
+body .dashboard .wd-task-card.is-overdue {
+  border-left-color: #eb5757;
+  background-color: color-mix(in srgb, #eb5757 6%, var(--nt-bg-sidebar));
+}
+body .dashboard .wd-task-card.is-done { opacity: 0.45; }
+body .dashboard .wd-task-card.is-done .wd-task-text { text-decoration: line-through; }
+body .dashboard .wd-task-card.is-error { background-color: rgba(235, 87, 87, 0.1); }
+
+body .dashboard .wd-task-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+}
+body .dashboard input.wd-task-check {
+  flex-shrink: 0;
+  margin: 1px 0 0;
+  cursor: pointer;
+}
+body .dashboard .wd-task-text {
+  flex: 1;
+  color: var(--nt-text-primary);
+  line-height: 1.4;
+  /* Wrap to at most three lines instead of truncating to one. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+body .dashboard .wd-task-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+}
+body .dashboard .wd-task-foot:empty { display: none; }
+body .dashboard .wd-task-pri,
+body .dashboard .wd-task-due {
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+/* Priority chip is a real <select>; strip the native control chrome. */
+body .dashboard select.wd-task-pri {
+  height: auto;
+  min-height: 0;
+  border: none;
+  box-shadow: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: none;
+}
+body .dashboard select.wd-task-pri.p3 {
+  background-color: var(--nt-hover);
+  color: var(--wd-secondary);
+}
+/* Due chip with a transparent date input laid over it, so a click anywhere on
+   the chip opens the native picker. */
+body .dashboard .wd-task-due-wrap {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+body .dashboard .wd-task-due.is-empty {
+  background-color: transparent;
+  border: 1px dashed var(--nt-border-strong);
+  color: var(--nt-text-tertiary);
+  padding: 0 6px;
+}
+body .dashboard .wd-task-due-wrap:hover .wd-task-due.is-empty {
+  border-color: var(--nt-accent);
+  color: var(--nt-accent);
+}
+body .dashboard input.wd-task-due-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  cursor: pointer;
+}
+/* Priority: hot at the top of the scale, cool at the bottom */
+body .dashboard .wd-task-pri.p0 { background-color: rgba(235, 87, 87, 0.16); color: #c0392b; }
+body .dashboard .wd-task-pri.p1 { background-color: rgba(217, 115, 13, 0.15); color: #b45f06; }
+body .dashboard .wd-task-pri.p2 { background-color: rgba(203, 145, 47, 0.15); color: #96690f; }
+body .dashboard .wd-task-pri.p4 { background-color: rgba(74, 163, 184, 0.15); color: #2c7488; }
+body .dashboard .wd-task-pri.p5 { background-color: var(--nt-hover); color: var(--wd-secondary); }
+body.theme-dark .dashboard .wd-task-pri.p0 { color: #ff8b8b; }
+body.theme-dark .dashboard .wd-task-pri.p1 { color: #e9a23b; }
+body.theme-dark .dashboard .wd-task-pri.p2 { color: #e0be6a; }
+body.theme-dark .dashboard .wd-task-pri.p4 { color: #7fc7d9; }
+
+body .dashboard .wd-task-due {
+  background-color: var(--nt-hover);
+  color: var(--wd-secondary);
+}
+body .dashboard .wd-task-due.is-overdue {
+  background-color: rgba(235, 87, 87, 0.16);
+  color: #c0392b;
+  font-weight: 600;
+}
+body .dashboard .wd-task-due.is-today {
+  background-color: rgba(35, 131, 226, 0.15);
+  color: var(--nt-accent);
+  font-weight: 600;
+}
+body.theme-dark .dashboard .wd-task-due.is-overdue { color: #ff8b8b; }
+
+body .dashboard a.wd-task-src {
+  margin-left: auto;          /* source note sits at the right edge of the footer */
+  max-width: 150px;
+  overflow: hidden;
+  color: var(--nt-text-tertiary);
+  font-size: 11px;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body .dashboard a.wd-task-src:hover { color: var(--nt-accent); }
+
+/* --- Dashboard sections as self-contained boxes ----------------------------- */
+body .dashboard details.wd-section {
+  margin: 0 0 12px;
+  border: 1px solid var(--nt-border-strong);
+  border-radius: 8px;
+  background-color: var(--nt-bg-sidebar);
+  overflow: hidden;
+}
+body .dashboard details.wd-section > summary.wd-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  color: var(--nt-text-primary);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  transition: background-color 120ms ease;
+}
+body .dashboard details.wd-section > summary.wd-section-toggle::-webkit-details-marker { display: none; }
+body .dashboard details.wd-section > summary.wd-section-toggle::before {
+  content: "\25B8";
+  color: var(--nt-text-tertiary);
+  font-size: 9px;
+}
+body .dashboard details.wd-section[open] > summary.wd-section-toggle::before { content: "\25BE"; }
+body .dashboard details.wd-section > summary.wd-section-toggle:hover { background-color: var(--nt-hover); }
+body .dashboard .wd-section-count {
+  padding: 0 7px;
+  border-radius: 3px;
+  background-color: var(--nt-hover);
+  color: var(--wd-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+body .dashboard .wd-section-name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+body .dashboard details.wd-section[open] > summary.wd-section-toggle {
+  border-bottom: 1px solid var(--nt-border);
+}
+/* Content sits on the page tone so it reads as inset within the box */
+body .dashboard .wd-section-body {
+  padding: 13px 14px 4px;
+  background-color: var(--nt-bg);
+}
+/* Inner elements already carry their own bottom margin */
+body .dashboard .wd-section-body > :last-child { margin-bottom: 9px; }
+
+/* --- Collapsible sections --------------------------------------------------- */
+body .dashboard details.wd-fold { margin: 0 0 1.6em; }
+body .dashboard details.wd-fold > summary {
+  padding: 7px 12px;
+  border: 1px solid var(--nt-border-strong);
+  border-radius: 7px;
+  background-color: var(--nt-bg-sidebar);
+  color: var(--wd-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  list-style: none;
+  transition: background-color 120ms ease;
+}
+body .dashboard details.wd-fold > summary::-webkit-details-marker { display: none; }
+body .dashboard details.wd-fold > summary::before {
+  content: "▸ ";
+  color: var(--nt-text-tertiary);
+}
+body .dashboard details.wd-fold[open] > summary {
+  border-radius: 7px 7px 0 0;
+  color: var(--nt-text-primary);
+}
+body .dashboard details.wd-fold[open] > summary::before { content: "▾ "; }
+body .dashboard details.wd-fold > summary:hover { background-color: var(--nt-hover); }
+body .dashboard details.wd-fold > table { margin-top: 0; }
+
+/* --- Task grid + tables --- */
+body .dashboard .next-actions-list .contains-task-list { padding-left: 1.2em; }
+body .dashboard .next-actions-list li { font-size: 14px; }
+body .dashboard.table-small table,
+body .dashboard table { font-size: 13px; }
+body .dashboard th { font-weight: 500; }
+
+/* ============================================================================
+   REGION 20 — FILE EXPLORER ACTION BUTTONS
+   ----------------------------------------------------------------------------
+   "New note" shows as a labelled pill by default; the other actions are bare
+   icons. Hovering any other action expands that one into a pill and collapses
+   "New note" back to its icon (via :has() on the container), so exactly one
+   label is visible and the row can never grow wide enough to wrap.
+   Labels are short (Note / Folder / Sort / Collapse) to keep pills narrow.
+   ============================================================================ */
+.workspace-leaf-content[data-type="file-explorer"] .nav-buttons-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;          /* never let an expanded pill wrap the row */
+  gap: 2px;
+  padding: 2px 6px 6px;
+  overflow: hidden;
+}
+
+/* Shared: collapsed icon state + the transition every button animates on */
+.workspace-leaf-content[data-type="file-explorer"] .nav-action-button {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 0;
+  padding: 5px 6px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  white-space: nowrap;
+  transition:
+    gap 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    padding 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease;
+}
+.workspace-leaf-content[data-type="file-explorer"] .nav-action-button::after {
+  content: attr(aria-label);   /* fallback for anything not mapped below */
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  transition:
+    max-width 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 130ms ease;
+}
+.workspace-leaf-content[data-type="file-explorer"] .nav-action-button[aria-label*="note" i]::after     { content: "Note"; }
+.workspace-leaf-content[data-type="file-explorer"] .nav-action-button[aria-label*="folder" i]::after   { content: "Folder"; }
+.workspace-leaf-content[data-type="file-explorer"] .nav-action-button[aria-label*="sort" i]::after     { content: "Sort"; }
+.workspace-leaf-content[data-type="file-explorer"] .nav-action-button[aria-label*="collapse" i]::after { content: "Collapse"; }
+.workspace-leaf-content[data-type="file-explorer"] .nav-action-button[aria-label*="expand" i]::after   { content: "Expand"; }
+
+/* The pill look, shared by "New note" at rest and any button on hover */
+.workspace-leaf-content[data-type="file-explorer"] .nav-action-button[aria-label*="note" i],
+.workspace-leaf-content[data-type="file-explorer"] .nav-action-button:hover,
+.workspace-leaf-content[data-type="file-explorer"] .nav-action-button:focus-visible {
+  gap: 6px;
+  padding: 5px 10px 5px 8px;
+  border-color: var(--nt-border-strong);
+  background-color: var(--nt-bg);
+  box-shadow: 0 1px 2px rgba(15, 15, 15, 0.04);
+  color: var(--nt-text-primary);
+}
+.workspace-leaf-content[data-type="file-explorer"] .nav-action-button[aria-label*="note" i]::after,
+.workspace-leaf-content[data-type="file-explorer"] .nav-action-button:hover::after,
+.workspace-leaf-content[data-type="file-explorer"] .nav-action-button:focus-visible::after {
+  max-width: 90px;
+  opacity: 1;
+}
+
+/* While another action is hovered/focused, "New note" yields its label */
+.workspace-leaf-content[data-type="file-explorer"] .nav-buttons-container:has(.nav-action-button:not([aria-label*="note" i]):hover) .nav-action-button[aria-label*="note" i],
+.workspace-leaf-content[data-type="file-explorer"] .nav-buttons-container:has(.nav-action-button:not([aria-label*="note" i]):focus-visible) .nav-action-button[aria-label*="note" i] {
+  gap: 0;
+  padding: 5px 6px;
+  border-color: transparent;
+  background-color: transparent;
+  box-shadow: none;
+}
+.workspace-leaf-content[data-type="file-explorer"] .nav-buttons-container:has(.nav-action-button:not([aria-label*="note" i]):hover) .nav-action-button[aria-label*="note" i]::after,
+.workspace-leaf-content[data-type="file-explorer"] .nav-buttons-container:has(.nav-action-button:not([aria-label*="note" i]):focus-visible) .nav-action-button[aria-label*="note" i]::after {
+  max-width: 0;
+  opacity: 0;
+}
+
+/* ============================================================================
+   REGION 23 — ALTERNATE CHECKBOX STATES (Things / ITS style)
+   ----------------------------------------------------------------------------
+   Obsidian sets data-task on the checkbox input itself (in both Live Preview and
+   reading view), so `input[data-task="?"]:checked` is the reliable hook.
+
+   The glyph is applied as a MASK, not as ::after text. Text `content` on an
+   input's pseudo-element does not render dependably — replaced elements don't
+   reliably generate pseudo boxes — which is why an earlier attempt showed only
+   fragments of the base tick. Masking an inline SVG and filling it with
+   background-color also means every icon takes a palette token, so these follow
+   the active palette (and go grey under Monochrome).
+
+   Usage:  - [/] incomplete    - [!] important    - [b] bookmark   …
+   ============================================================================ */
+body input[data-task="/"]:checked,
+body li[data-task="/"] > input[type="checkbox"]:checked,
+body li[data-task="/"] > p > input[type="checkbox"]:checked,
+body input[data-task="-"]:checked,
+body li[data-task="-"] > input[type="checkbox"]:checked,
+body li[data-task="-"] > p > input[type="checkbox"]:checked,
+body input[data-task=">"]:checked,
+body li[data-task=">"] > input[type="checkbox"]:checked,
+body li[data-task=">"] > p > input[type="checkbox"]:checked,
+body input[data-task="<"]:checked,
+body li[data-task="<"] > input[type="checkbox"]:checked,
+body li[data-task="<"] > p > input[type="checkbox"]:checked,
+body input[data-task="?"]:checked,
+body li[data-task="?"] > input[type="checkbox"]:checked,
+body li[data-task="?"] > p > input[type="checkbox"]:checked,
+body input[data-task="!"]:checked,
+body li[data-task="!"] > input[type="checkbox"]:checked,
+body li[data-task="!"] > p > input[type="checkbox"]:checked,
+body input[data-task="*"]:checked,
+body li[data-task="*"] > input[type="checkbox"]:checked,
+body li[data-task="*"] > p > input[type="checkbox"]:checked,
+body input[data-task="\""]:checked,
+body li[data-task="\""] > input[type="checkbox"]:checked,
+body li[data-task="\""] > p > input[type="checkbox"]:checked,
+body input[data-task="l"]:checked,
+body li[data-task="l"] > input[type="checkbox"]:checked,
+body li[data-task="l"] > p > input[type="checkbox"]:checked,
+body input[data-task="b"]:checked,
+body li[data-task="b"] > input[type="checkbox"]:checked,
+body li[data-task="b"] > p > input[type="checkbox"]:checked,
+body input[data-task="i"]:checked,
+body li[data-task="i"] > input[type="checkbox"]:checked,
+body li[data-task="i"] > p > input[type="checkbox"]:checked,
+body input[data-task="S"]:checked,
+body li[data-task="S"] > input[type="checkbox"]:checked,
+body li[data-task="S"] > p > input[type="checkbox"]:checked,
+body input[data-task="I"]:checked,
+body li[data-task="I"] > input[type="checkbox"]:checked,
+body li[data-task="I"] > p > input[type="checkbox"]:checked,
+body input[data-task="p"]:checked,
+body li[data-task="p"] > input[type="checkbox"]:checked,
+body li[data-task="p"] > p > input[type="checkbox"]:checked,
+body input[data-task="c"]:checked,
+body li[data-task="c"] > input[type="checkbox"]:checked,
+body li[data-task="c"] > p > input[type="checkbox"]:checked,
+body input[data-task="f"]:checked,
+body li[data-task="f"] > input[type="checkbox"]:checked,
+body li[data-task="f"] > p > input[type="checkbox"]:checked,
+body input[data-task="k"]:checked,
+body li[data-task="k"] > input[type="checkbox"]:checked,
+body li[data-task="k"] > p > input[type="checkbox"]:checked,
+body input[data-task="w"]:checked,
+body li[data-task="w"] > input[type="checkbox"]:checked,
+body li[data-task="w"] > p > input[type="checkbox"]:checked,
+body input[data-task="u"]:checked,
+body li[data-task="u"] > input[type="checkbox"]:checked,
+body li[data-task="u"] > p > input[type="checkbox"]:checked,
+body input[data-task="d"]:checked,
+body li[data-task="d"] > input[type="checkbox"]:checked,
+body li[data-task="d"] > p > input[type="checkbox"]:checked {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  -webkit-mask-repeat: no-repeat;   mask-repeat: no-repeat;
+  -webkit-mask-position: center;    mask-position: center;
+  -webkit-mask-size: contain;       mask-size: contain;
+}
+body input[data-task="/"]:checked::after,
+body li[data-task="/"] > input[type="checkbox"]:checked::after,
+body li[data-task="/"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="-"]:checked::after,
+body li[data-task="-"] > input[type="checkbox"]:checked::after,
+body li[data-task="-"] > p > input[type="checkbox"]:checked::after,
+body input[data-task=">"]:checked::after,
+body li[data-task=">"] > input[type="checkbox"]:checked::after,
+body li[data-task=">"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="<"]:checked::after,
+body li[data-task="<"] > input[type="checkbox"]:checked::after,
+body li[data-task="<"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="?"]:checked::after,
+body li[data-task="?"] > input[type="checkbox"]:checked::after,
+body li[data-task="?"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="!"]:checked::after,
+body li[data-task="!"] > input[type="checkbox"]:checked::after,
+body li[data-task="!"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="*"]:checked::after,
+body li[data-task="*"] > input[type="checkbox"]:checked::after,
+body li[data-task="*"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="\""]:checked::after,
+body li[data-task="\""] > input[type="checkbox"]:checked::after,
+body li[data-task="\""] > p > input[type="checkbox"]:checked::after,
+body input[data-task="l"]:checked::after,
+body li[data-task="l"] > input[type="checkbox"]:checked::after,
+body li[data-task="l"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="b"]:checked::after,
+body li[data-task="b"] > input[type="checkbox"]:checked::after,
+body li[data-task="b"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="i"]:checked::after,
+body li[data-task="i"] > input[type="checkbox"]:checked::after,
+body li[data-task="i"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="S"]:checked::after,
+body li[data-task="S"] > input[type="checkbox"]:checked::after,
+body li[data-task="S"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="I"]:checked::after,
+body li[data-task="I"] > input[type="checkbox"]:checked::after,
+body li[data-task="I"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="p"]:checked::after,
+body li[data-task="p"] > input[type="checkbox"]:checked::after,
+body li[data-task="p"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="c"]:checked::after,
+body li[data-task="c"] > input[type="checkbox"]:checked::after,
+body li[data-task="c"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="f"]:checked::after,
+body li[data-task="f"] > input[type="checkbox"]:checked::after,
+body li[data-task="f"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="k"]:checked::after,
+body li[data-task="k"] > input[type="checkbox"]:checked::after,
+body li[data-task="k"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="w"]:checked::after,
+body li[data-task="w"] > input[type="checkbox"]:checked::after,
+body li[data-task="w"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="u"]:checked::after,
+body li[data-task="u"] > input[type="checkbox"]:checked::after,
+body li[data-task="u"] > p > input[type="checkbox"]:checked::after,
+body input[data-task="d"]:checked::after,
+body li[data-task="d"] > input[type="checkbox"]:checked::after,
+body li[data-task="d"] > p > input[type="checkbox"]:checked::after {
+  display: none !important;   /* REGION 7 draws its tick here */
+}
+
+/* --- One block per state: mask + colour ------------------------------------- */
+/* incomplete */
+body input[data-task="/"]:checked,
+body li[data-task="/"] > input[type="checkbox"]:checked,
+body li[data-task="/"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-accent) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%97%90%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%97%90%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* canceled */
+body input[data-task="-"]:checked,
+body li[data-task="-"] > input[type="checkbox"]:checked,
+body li[data-task="-"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-text-tertiary) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9C%95%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9C%95%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* forwarded */
+body input[data-task=">"]:checked,
+body li[data-task=">"] > input[type="checkbox"]:checked,
+body li[data-task=">"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-5) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9E%A4%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9E%A4%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* scheduling */
+body input[data-task="<"]:checked,
+body li[data-task="<"] > input[type="checkbox"]:checked,
+body li[data-task="<"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-5) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%C2%BB%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%C2%BB%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* question */
+body input[data-task="?"]:checked,
+body li[data-task="?"] > input[type="checkbox"]:checked,
+body li[data-task="?"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-4) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%3F%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%3F%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* important */
+body input[data-task="!"]:checked,
+body li[data-task="!"] > input[type="checkbox"]:checked,
+body li[data-task="!"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-1) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%21%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%21%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* star */
+body input[data-task="*"]:checked,
+body li[data-task="*"] > input[type="checkbox"]:checked,
+body li[data-task="*"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-4) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%98%85%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%98%85%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* quote */
+body input[data-task="\""]:checked,
+body li[data-task="\""] > input[type="checkbox"]:checked,
+body li[data-task="\""] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-3) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9D%9D%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9D%9D%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* location */
+body input[data-task="l"]:checked,
+body li[data-task="l"] > input[type="checkbox"]:checked,
+body li[data-task="l"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-6) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%97%8F%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%97%8F%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* bookmark */
+body input[data-task="b"]:checked,
+body li[data-task="b"] > input[type="checkbox"]:checked,
+body li[data-task="b"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-4) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9A%91%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9A%91%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* information */
+body input[data-task="i"]:checked,
+body li[data-task="i"] > input[type="checkbox"]:checked,
+body li[data-task="i"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-1) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3Ei%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3Ei%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* savings */
+body input[data-task="S"]:checked,
+body li[data-task="S"] > input[type="checkbox"]:checked,
+body li[data-task="S"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-3) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%24%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%24%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* idea */
+body input[data-task="I"]:checked,
+body li[data-task="I"] > input[type="checkbox"]:checked,
+body li[data-task="I"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-4) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9C%B1%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9C%B1%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* pros */
+body input[data-task="p"]:checked,
+body li[data-task="p"] > input[type="checkbox"]:checked,
+body li[data-task="p"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-3) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%91%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%91%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* cons */
+body input[data-task="c"]:checked,
+body li[data-task="c"] > input[type="checkbox"]:checked,
+body li[data-task="c"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-6) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%93%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%93%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* fire */
+body input[data-task="f"]:checked,
+body li[data-task="f"] > input[type="checkbox"]:checked,
+body li[data-task="f"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-1) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%96%B2%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%96%B2%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* key */
+body input[data-task="k"]:checked,
+body li[data-task="k"] > input[type="checkbox"]:checked,
+body li[data-task="k"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-4) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9C%A6%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9C%A6%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* win */
+body input[data-task="w"]:checked,
+body li[data-task="w"] > input[type="checkbox"]:checked,
+body li[data-task="w"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-accent) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%98%85%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%98%85%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* up */
+body input[data-task="u"]:checked,
+body li[data-task="u"] > input[type="checkbox"]:checked,
+body li[data-task="u"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-3) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%97%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%97%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+/* down */
+body input[data-task="d"]:checked,
+body li[data-task="d"] > input[type="checkbox"]:checked,
+body li[data-task="d"] > p > input[type="checkbox"]:checked {
+  background-color: var(--nt-dash-6) !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%98%3C%2Ftext%3E%3C%2Fsvg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%98%3C%2Ftext%3E%3C%2Fsvg%3E");
+}
+
+/* Canceled: mute and strike the whole line, like a completed task */
+body .markdown-rendered li.task-list-item[data-task="-"],
+body .markdown-source-view [data-task="-"] {
+  color: var(--nt-text-tertiary);
+  text-decoration: line-through;
+}
+
+/* ============================================================================
+   REGION 24 — SEARCH HIGHLIGHTING
+   ----------------------------------------------------------------------------
+   Obsidian's defaults use a saturated yellow that fights every palette. These
+   are derived from the active accent instead, so matches read as a soft tint
+   and follow whatever palette is selected (grey under Monochrome).
+
+   The five surfaces Obsidian actually uses (class names taken from its own
+   bundle, not guessed):
+     .cm-searchMatch                  in-note find (Cmd+F), every match
+     .cm-searchMatch-selected         the match the cursor is on
+     .search-result-file-matched-text the snippet in the search pane
+     .search-match-highlight          matches shown in the note from a search
+     .suggestion-highlight            matched letters in quick switcher/palette
+     .is-flashing                     the flash when jumping to a result
+   ============================================================================ */
+body.theme-light, body.theme-dark {
+  /* Soft enough to read through, strong enough to find. */
+  --nt-find: color-mix(in srgb, var(--nt-accent) 20%, transparent);
+  --nt-find-current: color-mix(in srgb, var(--nt-accent) 38%, transparent);
+}
+
+/* --- In-note find (Cmd+F) --------------------------------------------------- */
+.cm-editor .cm-searchMatch {
+  background-color: var(--nt-find);
+  border-radius: 2px;
+}
+/* The current match gets a ring rather than a louder fill, so stepping through
+   results is obvious without the page strobing. */
+.cm-editor .cm-searchMatch-selected,
+.cm-editor .cm-searchMatch.cm-searchMatch-selected {
+  background-color: var(--nt-find-current);
+  box-shadow: 0 0 0 1px var(--nt-accent);
+  border-radius: 2px;
+}
+
+/* --- Matches highlighted in the note from a search -------------------------- */
+.search-match-highlight,
+.markdown-rendered .search-match-highlight {
+  background-color: var(--nt-find);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* --- Search pane result snippets -------------------------------------------- */
+.search-result-file-matched-text {
+  background-color: var(--nt-find);
+  color: var(--nt-text-primary);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* --- Quick switcher / command palette --------------------------------------
+   In a modal a background chip on every matched letter looks speckled, so the
+   matched characters are simply weighted and tinted instead. */
+.suggestion-highlight {
+  background-color: transparent;
+  color: var(--nt-accent);
+  font-weight: 600;
+}
+
+/* --- The jump-to-result flash ------------------------------------------------ */
+.is-flashing {
+  background-color: var(--nt-find-current);
+  transition: background-color 480ms ease-out;
+}
+/* The note title is `.inline-title`, driven by --inline-title-size, NOT an h1.
+   A 40px title eats a third of a phone screen before any content. Overriding
+   the type scale at the variable level fixes every note, not just these two. */
+body.is-phone {
+  --inline-title-size: 25px;
+  --h1-size: 22px;
+  --h2-size: 19px;
+  --h3-size: 17px;
+}

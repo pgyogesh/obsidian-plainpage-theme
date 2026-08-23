@@ -1,0 +1,10 @@
+{
+  "name": "Plainpage",
+  "version": "1.0.0",
+  "minAppVersion": "1.4.0",
+  "author": "yjadhav",
+  "authorUrl": "https://github.com/pgyogesh",
+  "description": "A calm, document-first interface for Obsidian, inspired by Notion. Flat surfaces, quiet borders, eleven colour palettes, light and dark mode. Not affiliated with Notion Labs.",
+  "isDesktopOnly": false,
+  "fundingUrl": "https://www.buymeacoffee.com/pgyogesh"
+}
