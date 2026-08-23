@@ -31,19 +31,19 @@ The whole window, not only the note:
 
 Eleven schemes, each hand-tuned for light and dark separately. Switch them from the companion plugin.
 
-| Palette | Character |
-| --- | --- |
-| Plainpage | The default. Warm off-white paper, blue accent. |
-| Graphite | Cool neutral grey |
-| Sepia | Warm paper |
-| Everforest | Muted green |
-| Nord | Arctic blue-grey |
-| Rosé Pine | Muted mauve |
-| Dim | Soft contrast: darker light, lighter dark |
-| Blush | Warm rose and mauve |
-| Terracotta | Warm grey and clay |
-| Goodnotes | Peach, clay and sage |
-| Monochrome | Greyscale only. Hierarchy through tone, not hue. |
+| Palette | Character | Full size |
+| --- | --- | --- |
+| Plainpage | The default. Warm off-white paper, blue accent. | [light](docs/screenshots/palettes/light-default.png) &middot; [dark](docs/screenshots/palettes/dark-default.png) |
+| Graphite | Cool neutral grey | [light](docs/screenshots/palettes/light-graphite.png) &middot; [dark](docs/screenshots/palettes/dark-graphite.png) |
+| Sepia | Warm paper | [light](docs/screenshots/palettes/light-sepia.png) &middot; [dark](docs/screenshots/palettes/dark-sepia.png) |
+| Everforest | Muted green | [light](docs/screenshots/palettes/light-everforest.png) &middot; [dark](docs/screenshots/palettes/dark-everforest.png) |
+| Nord | Arctic blue-grey | [light](docs/screenshots/palettes/light-nord.png) &middot; [dark](docs/screenshots/palettes/dark-nord.png) |
+| Rosé Pine | Muted mauve | [light](docs/screenshots/palettes/light-rose-pine.png) &middot; [dark](docs/screenshots/palettes/dark-rose-pine.png) |
+| Dim | Soft contrast: darker light, lighter dark | [light](docs/screenshots/palettes/light-dim.png) &middot; [dark](docs/screenshots/palettes/dark-dim.png) |
+| Blush | Warm rose and mauve | [light](docs/screenshots/palettes/light-blush.png) &middot; [dark](docs/screenshots/palettes/dark-blush.png) |
+| Terracotta | Warm grey and clay | [light](docs/screenshots/palettes/light-terracotta.png) &middot; [dark](docs/screenshots/palettes/dark-terracotta.png) |
+| Goodnotes | Peach, clay and sage | [light](docs/screenshots/palettes/light-goodnotes.png) &middot; [dark](docs/screenshots/palettes/dark-goodnotes.png) |
+| Monochrome | Greyscale only. Hierarchy through tone, not hue. | [light](docs/screenshots/palettes/light-mono.png) &middot; [dark](docs/screenshots/palettes/dark-mono.png) |
 
 ![Every palette in light mode](docs/screenshots/palettes-light.png)
 
@@ -95,6 +95,12 @@ against the `--nt-bg` the palette declares in `theme.css`, and stops if any
 capture is more than 8 units away from where it should be. Colour alone cannot
 do the job: Plainpage, Graphite and Monochrome are all pure white in light mode,
 and Rose Pine, Blush and Goodnotes sit within 5 units of each other.
+
+It also measures where the window actually sits inside each capture and crops
+to it. A `Cmd+Shift+4` window shot pads the window with its drop shadow as
+transparent pixels, and the padding is not symmetric: about 1.8% on the left
+and 3.8% at the bottom. Trimming a flat percentage instead leaves a
+transparent halo inside the rounded frame.
 
 Composition is HTML rendered by macOS Quick Look, so there is no browser to
 install.
