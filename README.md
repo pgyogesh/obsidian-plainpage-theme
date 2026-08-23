@@ -4,7 +4,7 @@ A calm, document-first theme for [Obsidian](https://obsidian.md), inspired by th
 
 Plainpage is an independent project. It is not affiliated with, endorsed by, or connected to Notion Labs, Inc.
 
-[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20book-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=000000)](https://www.buymeacoffee.com/pgyogesh)
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=000000)](https://www.buymeacoffee.com/pgyogesh)
 
 Plainpage is free and always will be. If it earns a place in your vault, a coffee would mean a lot and help us keep building it.
 
