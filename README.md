@@ -4,7 +4,7 @@ A calm, document-first theme for [Obsidian](https://obsidian.md), inspired by th
 
 Plainpage is an independent project. It is not affiliated with, endorsed by, or connected to Notion Labs, Inc.
 
-![Plainpage in five of its eleven palettes](docs/screenshots/hero.png)
+> Screenshots go here before the first release.
 
 ## Install
 
@@ -27,10 +27,6 @@ The whole window, not only the note:
 | Status bar, scrollbars, buttons, inputs | Yes |
 | Callouts, code blocks, tables, tags, properties | Yes |
 
-| Light | Dark |
-| --- | --- |
-| ![Light](docs/screenshots/single-light.png) | ![Dark](docs/screenshots/single-dark.png) |
-
 ## Palettes
 
 Eleven schemes, each hand-tuned for light and dark separately. Switch them from the companion plugin.
@@ -48,8 +44,6 @@ Eleven schemes, each hand-tuned for light and dark separately. Switch them from 
 | Terracotta | Warm grey and clay |
 | Goodnotes | Peach, clay and sage |
 | Monochrome | Greyscale only. Hierarchy through tone, not hue. |
-
-![All eleven palettes](docs/screenshots/palettes.png)
 
 A palette redefines only the `--nt-*` design tokens. Everything else follows automatically.
 
@@ -79,24 +73,6 @@ Some Notion behaviours cannot be reproduced in CSS alone. These are documented i
 ## Support
 
 If Plainpage is useful to you: [buy me a coffee](https://www.buymeacoffee.com/pgyogesh).
-
-## Reproducing the screenshots
-
-Every image in this README is generated, not hand-captured, so it never goes
-stale against the CSS:
-
-```bash
-docs/harness/shoot.sh
-```
-
-`docs/harness/build.py` writes one small HTML document per window, each loading
-`theme.css` with a different palette on its `<body>`. Windows have to be
-separate documents because the palette selectors are scoped to `body`, so the
-hero page composes them as iframes. Rendering uses macOS Quick Look
-(`qlmanage`), which is built in, so there is no browser to install.
-
-`docs/showcase.md` is the same content as a real note, if you would rather open
-it in Obsidian and capture the app yourself.
 
 ## Licence
 
