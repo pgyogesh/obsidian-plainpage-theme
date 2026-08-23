@@ -2962,3 +2962,17 @@ body.is-phone {
   --h2-size: 19px;
   --h3-size: 17px;
 }
+
+/* ============================================================================
+   KNOWN LIMITATIONS (documented, not faked)
+   ----------------------------------------------------------------------------
+   The following Notion behaviors cannot be reproduced with CSS alone and are
+   intentionally left as-is rather than approximated with broken UI:
+     - Per-block drag handle (⋮⋮) and the "+" add-block affordance on hover:
+       these are Notion runtime widgets, not stylable Obsidian elements.
+     - The slash-command ("/") block-type menu chrome — Obsidian has no
+       equivalent DOM to restyle into it.
+     - Database / board / gallery / calendar views — require community plugins
+       (e.g. Dataview, Projects); no native Obsidian DOM to theme.
+   Everything else above is real CSS restyling that preserves functionality.
+   ============================================================================ */
