@@ -4,6 +4,11 @@ A calm, document-first theme for [Obsidian](https://obsidian.md), inspired by th
 
 Plainpage is an independent project. It is not affiliated with, endorsed by, or connected to Notion Labs, Inc.
 
+[![Buy me a coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=000000)](https://www.buymeacoffee.com/pgyogesh)
+
+Plainpage is free and always will be. If it earns a place in your vault,
+a coffee helps a student finish their education.
+
 ![Plainpage in five of its palettes](docs/screenshots/hero.png)
 
 ## Install
@@ -73,10 +78,6 @@ The file is organised into numbered regions, each with a comment explaining what
 ## Known limitations
 
 Some Notion behaviours cannot be reproduced in CSS alone. These are documented in a block at the end of `theme.css` rather than faked. The short version: the block drag handle is visual only, and anything needing new DOM nodes or drag behaviour is out of scope for a theme.
-
-## Support
-
-If Plainpage is useful to you: [buy me a coffee](https://www.buymeacoffee.com/pgyogesh).
 
 ## Reproducing the screenshots
 
