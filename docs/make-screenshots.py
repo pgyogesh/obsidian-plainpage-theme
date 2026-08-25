@@ -36,11 +36,13 @@ Rendering is macOS Quick Look, which is built in, so there is no browser to
 install. Its viewport is about 1006 CSS px wide and its canvas is always
 square, so every page here is exactly 1000x1000 and needs no cropping.
 """
-import collections, pathlib, re, struct, subprocess, shutil, sys
+import collections, os, pathlib, re, struct, subprocess, shutil, sys
 
 SRC = pathlib.Path.home() / "Desktop" / "plainpage-shots"
-THEME = (pathlib.Path.home() / "Library/Mobile Documents/iCloud~md~obsidian"
-         / "Documents/work_notes/.obsidian/themes/Plainpage")
+# The theme folder this script reads theme.css from and writes screenshots
+# into. Defaults to the repo it lives in, so a clone needs no configuration.
+THEME = pathlib.Path(os.environ.get(
+    "PLAINPAGE_THEME", str(pathlib.Path(__file__).resolve().parent.parent)))
 OUT = THEME / "docs" / "screenshots"
 WORK = pathlib.Path("/tmp/pp-compose")
 CLEAN = WORK / "clean"
