@@ -14,7 +14,6 @@
    These require plugins; pure CSS gets as close as it can.
    ============================================================================ */
 
-
 /* ============================================================================
    1. NOTION DESIGN TOKENS
    ============================================================================ */
@@ -109,7 +108,6 @@ body.theme-dark {
   --nt-callout-orange: rgba(217, 115, 13, 0.13);
   --nt-callout-purple: rgba(154, 109, 215, 0.13);
 }
-
 
 /* ============================================================================
    2. MAP OBSIDIAN VARIABLES ONTO NOTION TOKENS
@@ -328,7 +326,6 @@ body.theme-dark {
   --divider-color: var(--nt-border);
   --divider-width: 1px;
 }
-
 
 /* ============================================================================
    3. ELEMENT-LEVEL OVERRIDES (things variables don't fully cover), BY REGION
@@ -1023,7 +1020,6 @@ textarea:focus,
   background-color: var(--nt-hover);
 }
 
-
 /* ---------------------------------------------------------------------------
    REGION 13 — EDITOR POLISH (highlight, empty-line hint)
    --------------------------------------------------------------------------- */
@@ -1247,8 +1243,7 @@ body.plainpage-floating-statusbar .status-bar:hover { opacity: 1; }
 body.plainpage-properties-grid .metadata-properties {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  column-gap: 24px;
-  row-gap: 2px;
+  gap: 2px 24px;   /* row then column */
   align-items: start;
 }
 body.plainpage-properties-grid .metadata-property-key { min-width: 110px; }
@@ -1695,7 +1690,6 @@ body.theme-dark:is(.plainpage-palette-graphite, .plainpage-palette-sepia, .plain
   --nt-callout-purple: rgba(154, 109, 215, 0.15);
 }
 
-
 /* ============================================================================
    REGION 17 — PAGE ICON & COVER BANNER
    ----------------------------------------------------------------------------
@@ -1726,7 +1720,7 @@ body.theme-dark:is(.plainpage-palette-graphite, .plainpage-palette-sepia, .plain
       rgba(0, 0, 0, 0.24) 94%,
       rgba(0, 0, 0, 0.06) 98%,
       transparent 100%);
-  -webkit-mask-image: var(--nt-banner-fade);
+
   mask-image: var(--nt-banner-fade);
 }
 
@@ -2650,9 +2644,9 @@ body li[data-task="d"] > p > input[type="checkbox"]:checked {
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  -webkit-mask-repeat: no-repeat;   mask-repeat: no-repeat;
-  -webkit-mask-position: center;    mask-position: center;
-  -webkit-mask-size: contain;       mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
 }
 body input[data-task="/"]:checked::after,
 body li[data-task="/"] > input[type="checkbox"]:checked::after,
@@ -2723,7 +2717,7 @@ body input[data-task="/"]:checked,
 body li[data-task="/"] > input[type="checkbox"]:checked,
 body li[data-task="/"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-accent) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%97%90%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%97%90%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* canceled */
@@ -2731,7 +2725,7 @@ body input[data-task="-"]:checked,
 body li[data-task="-"] > input[type="checkbox"]:checked,
 body li[data-task="-"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-text-tertiary) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9C%95%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9C%95%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* forwarded */
@@ -2739,7 +2733,7 @@ body input[data-task=">"]:checked,
 body li[data-task=">"] > input[type="checkbox"]:checked,
 body li[data-task=">"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-5) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9E%A4%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9E%A4%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* scheduling */
@@ -2747,7 +2741,7 @@ body input[data-task="<"]:checked,
 body li[data-task="<"] > input[type="checkbox"]:checked,
 body li[data-task="<"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-5) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%C2%BB%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%C2%BB%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* question */
@@ -2755,7 +2749,7 @@ body input[data-task="?"]:checked,
 body li[data-task="?"] > input[type="checkbox"]:checked,
 body li[data-task="?"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-4) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%3F%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%3F%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* important */
@@ -2763,7 +2757,7 @@ body input[data-task="!"]:checked,
 body li[data-task="!"] > input[type="checkbox"]:checked,
 body li[data-task="!"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-1) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%21%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%21%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* star */
@@ -2771,7 +2765,7 @@ body input[data-task="*"]:checked,
 body li[data-task="*"] > input[type="checkbox"]:checked,
 body li[data-task="*"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-4) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%98%85%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%98%85%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* quote */
@@ -2779,7 +2773,7 @@ body input[data-task="\""]:checked,
 body li[data-task="\""] > input[type="checkbox"]:checked,
 body li[data-task="\""] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-3) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9D%9D%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9D%9D%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* location */
@@ -2787,7 +2781,7 @@ body input[data-task="l"]:checked,
 body li[data-task="l"] > input[type="checkbox"]:checked,
 body li[data-task="l"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-6) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%97%8F%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%97%8F%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* bookmark */
@@ -2795,7 +2789,7 @@ body input[data-task="b"]:checked,
 body li[data-task="b"] > input[type="checkbox"]:checked,
 body li[data-task="b"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-4) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9A%91%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9A%91%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* information */
@@ -2803,7 +2797,7 @@ body input[data-task="i"]:checked,
 body li[data-task="i"] > input[type="checkbox"]:checked,
 body li[data-task="i"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-1) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3Ei%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3Ei%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* savings */
@@ -2811,7 +2805,7 @@ body input[data-task="S"]:checked,
 body li[data-task="S"] > input[type="checkbox"]:checked,
 body li[data-task="S"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-3) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%24%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%24%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* idea */
@@ -2819,7 +2813,7 @@ body input[data-task="I"]:checked,
 body li[data-task="I"] > input[type="checkbox"]:checked,
 body li[data-task="I"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-4) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9C%B1%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9C%B1%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* pros */
@@ -2827,7 +2821,7 @@ body input[data-task="p"]:checked,
 body li[data-task="p"] > input[type="checkbox"]:checked,
 body li[data-task="p"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-3) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%91%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%91%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* cons */
@@ -2835,7 +2829,7 @@ body input[data-task="c"]:checked,
 body li[data-task="c"] > input[type="checkbox"]:checked,
 body li[data-task="c"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-6) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%93%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%93%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* fire */
@@ -2843,7 +2837,7 @@ body input[data-task="f"]:checked,
 body li[data-task="f"] > input[type="checkbox"]:checked,
 body li[data-task="f"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-1) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%96%B2%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%96%B2%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* key */
@@ -2851,7 +2845,7 @@ body input[data-task="k"]:checked,
 body li[data-task="k"] > input[type="checkbox"]:checked,
 body li[data-task="k"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-4) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9C%A6%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%9C%A6%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* win */
@@ -2859,7 +2853,7 @@ body input[data-task="w"]:checked,
 body li[data-task="w"] > input[type="checkbox"]:checked,
 body li[data-task="w"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-accent) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%98%85%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%98%85%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* up */
@@ -2867,7 +2861,7 @@ body input[data-task="u"]:checked,
 body li[data-task="u"] > input[type="checkbox"]:checked,
 body li[data-task="u"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-3) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%97%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%97%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 /* down */
@@ -2875,7 +2869,7 @@ body input[data-task="d"]:checked,
 body li[data-task="d"] > input[type="checkbox"]:checked,
 body li[data-task="d"] > p > input[type="checkbox"]:checked {
   background-color: var(--nt-dash-6) !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%98%3C%2Ftext%3E%3C%2Fsvg%3E");
+
   mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2016%2016%27%3E%3Ctext%20x%3D%278%27%20y%3D%2712.5%27%20font-family%3D%27-apple-system%2CSegoe%20UI%2Csans-serif%27%20font-size%3D%2714%27%20font-weight%3D%27600%27%20text-anchor%3D%27middle%27%3E%E2%86%98%3C%2Ftext%3E%3C%2Fsvg%3E");
 }
 
