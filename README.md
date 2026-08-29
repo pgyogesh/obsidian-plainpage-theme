@@ -10,7 +10,6 @@ Plainpage is free and always will be. If it earns a place in your vault, a coffe
 
 ![Plainpage in five of its palettes](docs/screenshots/hero.png)
 
-> [!IMPORTANT]
 > **To use any palette other than the default, install the companion plugin.**
 >
 > All eleven palettes are built into `theme.css`, but a palette is a class on
