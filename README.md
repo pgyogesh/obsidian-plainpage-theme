@@ -8,11 +8,11 @@ Plainpage is an independent project. It is not affiliated with, endorsed by, or 
 
 Plainpage is free and always will be. If it earns a place in your vault, a coffee would mean a lot and help us keep building it.
 
-![Plainpage in five of its palettes](docs/screenshots/hero.png)
-
 > **The eleven palettes need the companion plugin.**
 > Install [Plainpage Settings](https://github.com/pgyogesh/obsidian-plainpage-settings)
 > to switch between them. Without it you stay on the default palette.
+
+![Plainpage in five of its palettes](docs/screenshots/hero.png)
 
 ## Install
 
