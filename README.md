@@ -10,14 +10,9 @@ Plainpage is free and always will be. If it earns a place in your vault, a coffe
 
 ![Plainpage in five of its palettes](docs/screenshots/hero.png)
 
-> **To use any palette other than the default, install the companion plugin.**
->
-> All eleven palettes are built into `theme.css`, but a palette is a class on
-> `<body>`, and CSS cannot add a class to itself. Something has to set it, and
-> that something is [Plainpage Settings](https://github.com/pgyogesh/obsidian-plainpage-settings).
->
-> Without it the theme works perfectly well. You will just be on the default
-> palette forever, which is not what the screenshots show.
+> **The eleven palettes need the companion plugin.**
+> Install [Plainpage Settings](https://github.com/pgyogesh/obsidian-plainpage-settings)
+> to switch between them. Without it you stay on the default palette.
 
 ## Install
 
@@ -46,7 +41,7 @@ The whole window, not only the note:
 
 ## Palettes
 
-Eleven schemes, each hand-tuned for light and dark separately. **Switching between them needs [Plainpage Settings](https://github.com/pgyogesh/obsidian-plainpage-settings)**; the theme alone cannot change its own palette.
+Eleven schemes, each hand-tuned for light and dark separately. **Switching between them needs [Plainpage Settings](https://github.com/pgyogesh/obsidian-plainpage-settings).**
 
 | Palette | Character | Full size |
 | --- | --- | --- |
