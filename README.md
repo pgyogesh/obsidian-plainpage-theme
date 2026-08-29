@@ -10,11 +10,25 @@ Plainpage is free and always will be. If it earns a place in your vault, a coffe
 
 ![Plainpage in five of its palettes](docs/screenshots/hero.png)
 
+> [!IMPORTANT]
+> **To use any palette other than the default, install the companion plugin.**
+>
+> All eleven palettes are built into `theme.css`, but a palette is a class on
+> `<body>`, and CSS cannot add a class to itself. Something has to set it, and
+> that something is [Plainpage Settings](https://github.com/pgyogesh/obsidian-plainpage-settings).
+>
+> Without it the theme works perfectly well. You will just be on the default
+> palette forever, which is not what the screenshots show.
+
 ## Install
 
-**From Obsidian** (once it is in the directory): Settings, Appearance, Themes, Manage, then search for Plainpage.
+**1. The theme.** From Obsidian (once it is in the directory): Settings, Appearance, Themes, Manage, then search for Plainpage.
 
-**Manually:** download `manifest.json` and `theme.css` from the [latest release](https://github.com/pgyogesh/obsidian-plainpage-theme/releases) into `<vault>/.obsidian/themes/Plainpage/`, then pick Plainpage under Settings, Appearance.
+To install it by hand instead, download `manifest.json` and `theme.css` from the [latest release](https://github.com/pgyogesh/obsidian-plainpage-theme/releases) into `<vault>/.obsidian/themes/Plainpage/`, then pick Plainpage under Settings, Appearance.
+
+**2. The companion plugin.** Settings, Community plugins, Browse, then search for **Plainpage Settings**. Skip this only if you are happy on the default palette: it is what switches palettes, and it also adds focus mode, the layout toggles, page icons and cover banners.
+
+Plainpage requires Obsidian 1.8.0 or newer. On anything older, use [1.0.1](https://github.com/pgyogesh/obsidian-plainpage-theme/releases/tag/1.0.1).
 
 ## What it covers
 
@@ -33,7 +47,7 @@ The whole window, not only the note:
 
 ## Palettes
 
-Eleven schemes, each hand-tuned for light and dark separately. Switch them from the companion plugin.
+Eleven schemes, each hand-tuned for light and dark separately. **Switching between them needs [Plainpage Settings](https://github.com/pgyogesh/obsidian-plainpage-settings)**; the theme alone cannot change its own palette.
 
 | Palette | Character | Full size |
 | --- | --- | --- |
@@ -57,9 +71,15 @@ A palette redefines only the `--nt-*` design tokens. Everything else follows aut
 
 ## Companion plugin
 
-[Plainpage Settings](https://github.com/pgyogesh/obsidian-plainpage-settings) is optional. The theme looks complete without it. Install it if you want the palette switcher, the optional layout modes, page icons and cover banners.
+[Plainpage Settings](https://github.com/pgyogesh/obsidian-plainpage-settings) does the things a stylesheet cannot do for itself.
 
-The plugin works by toggling `plainpage-*` classes on `<body>`. The theme styles those classes. Neither one needs the other to load.
+| Needs the plugin | Works without it |
+| --- | --- |
+| Switching between the eleven palettes | The whole look, on the default palette |
+| Focus mode, borderless, full width, compact, floating panes, dim inactive panes | Every colour, type and layout rule |
+| Page icons and cover banners from frontmatter | Callouts, code, tables, tags, properties |
+
+The plugin works by toggling `plainpage-*` classes on `<body>`, and the theme styles those classes. Neither one needs the other to load, so the theme degrades cleanly: without the plugin nothing breaks, the extras simply never switch on.
 
 ## Customising
 
